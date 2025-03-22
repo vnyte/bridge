@@ -1,0 +1,23 @@
+[install]
+# Use exact versions in package.json
+save-exact = true
+# Don't generate a package-lock.json
+lockfile = true
+# Cache packages for faster installs
+cache = true
+# Use the official registry
+registry = "https://registry.npmjs.org"
+# Don't hoist dependencies (better for security)
+hoisted = false
+
+[test]
+# Use Bun's test runner
+coverage = true
+# Show test progress
+progress = true
+
+[dev]
+# Hot reload in development
+hot = true
+# Show detailed errors
+debug = true
