@@ -6,7 +6,7 @@ export const vehicleDocumentTypes = pgEnum('vehicle_document_types', [
   'REGISTRATION',
 ]);
 
-export const vehicleDocuments = pgTable('vehicle_documents', {
+export const VehicleDocumentTable = pgTable('vehicle_documents', {
   id: uuid('id').primaryKey().defaultRandom(),
   url: text('url').notNull(),
 

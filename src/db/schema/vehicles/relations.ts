@@ -1,10 +1,10 @@
 import { relations } from 'drizzle-orm';
-import { branches } from '../branches/columns';
-import { vehicles } from '../vehicles/columns';
+import { BranchTable } from '../branches/columns';
+import { VehicleTable } from '../vehicles/columns';
 
-export const vehicleRelations = relations(vehicles, ({ one }) => ({
-  branch: one(branches, {
-    fields: [vehicles.branchId],
-    references: [branches.id],
+export const vehicleRelations = relations(VehicleTable, ({ one }) => ({
+  branch: one(BranchTable, {
+    fields: [VehicleTable.branchId],
+    references: [BranchTable.id],
   }),
 }));

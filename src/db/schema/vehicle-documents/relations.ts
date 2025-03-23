@@ -1,10 +1,10 @@
 import { relations } from 'drizzle-orm';
-import { vehicles } from '../vehicles/columns';
-import { vehicleDocuments } from './columns';
+import { VehicleTable } from '../vehicles/columns';
+import { VehicleDocumentTable } from './columns';
 
-export const vehicleDocumentsRelations = relations(vehicleDocuments, ({ one }) => ({
-  vehicle: one(vehicles, {
-    fields: [vehicleDocuments.vehicleId],
-    references: [vehicles.id],
+export const vehicleDocumentsRelations = relations(VehicleDocumentTable, ({ one }) => ({
+  vehicle: one(VehicleTable, {
+    fields: [VehicleDocumentTable.vehicleId],
+    references: [VehicleTable.id],
   }),
 }));

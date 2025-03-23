@@ -1,10 +1,10 @@
 import { relations } from 'drizzle-orm';
-import { branches } from './columns';
-import { schools } from '../schools/columns';
+import { BranchTable } from './columns';
+import { TenantTable } from '../tenants/columns';
 
-export const branchesRelations = relations(branches, ({ one }) => ({
-  school: one(schools, {
-    fields: [branches.schoolId],
-    references: [schools.id],
+export const branchesRelations = relations(BranchTable, ({ one }) => ({
+  school: one(TenantTable, {
+    fields: [BranchTable.tenantId],
+    references: [TenantTable.id],
   }),
 }));

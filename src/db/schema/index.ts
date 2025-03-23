@@ -1,8 +1,8 @@
 export * from './vehicles/columns';
 export * from './vehicles/relations';
 
-export * from './schools/columns';
-export * from './schools/relations';
+export * from './tenants/columns';
+export * from './tenants/relations';
 
 export * from './branches/columns';
 export * from './branches/relations';
