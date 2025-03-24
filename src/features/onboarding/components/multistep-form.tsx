@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useForm, SubmitHandler, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SchoolNameStep from './steps/school-name';
@@ -9,7 +9,7 @@ import BranchesStep from './steps/branches';
 import React from 'react';
 import { onboardingFormSchema, OnboardingFormValues } from './types';
 import { createTenant } from '../server/action';
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { setTimeout } from 'timers';
 import { toast } from 'sonner';
 
@@ -56,18 +56,21 @@ export const MultistepForm = () => {
   const currentStepKey = stepOrder[currentStepIndex];
   const currentStep = steps[currentStepKey];
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   // Handle form submission
   const onSubmit: SubmitHandler<OnboardingFormValues> = async (data) => {
-    const response = await createTenant(data);
+    startTransition(async () => {
+      const response = await createTenant(data);
 
-    if (!response?.error) {
-      toast.success('Created successfully');
-      setTimeout(() => {
-        router.refresh();
-        router.push('/');
-      }, 1000);
-    }
+      if (!response?.error) {
+        toast.success('Created successfully');
+        setTimeout(() => {
+          router.refresh();
+          router.push('/');
+        }, 1000);
+      }
+    });
   };
 
   // Handle next step
@@ -106,7 +109,13 @@ export const MultistepForm = () => {
 
           {/* Navigation buttons */}
           <div className="flex justify-center gap-4 mt-20">
-            <Button type="button" variant="black" size="onboarding" onClick={goToNextStep}>
+            <Button
+              type="button"
+              variant="black"
+              size="onboarding"
+              onClick={goToNextStep}
+              isLoading={isPending}
+            >
               {currentStepIndex < stepOrder.length - 1 ? 'Next' : 'Submit'}
             </Button>
           </div>

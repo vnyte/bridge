@@ -1,9 +1,14 @@
 import { Vehicles } from '@/features/vehicles/components/table/vehicles';
 
-export default function VehiclesPage({ searchParams }: { searchParams: { name: string } }) {
+export default async function VehiclesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ name: string }>;
+}) {
+  const params = await searchParams;
   return (
     <div>
-      <Vehicles searchParams={searchParams} />
+      <Vehicles name={params.name} />
     </div>
   );
 }

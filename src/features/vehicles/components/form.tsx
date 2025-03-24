@@ -15,29 +15,27 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { TypographyP } from '@/components/ui/typography';
-
-export const formSchema = z.object({
-  name: z.string().min(1).min(2),
-  number: z.string().min(1).min(2),
-  pucNumber: z.string().min(1).min(2).optional(),
-  insuranceNumber: z.string().min(1).min(2).optional(),
-  registrationExpiry: z.string().min(1).min(2).optional(),
-  rent: z.number(),
-});
+import { useTransition } from 'react';
+import { addVehicle } from '../server/action';
+import { redirect } from 'next/navigation';
+import { vehicleFormSchema } from '../schemas/vehicles';
 
 export function VehicleForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof vehicleFormSchema>>({
+    resolver: zodResolver(vehicleFormSchema),
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      console.log(values);
-      toast.success('Vehicle added successfully');
-    } catch (error) {
-      console.error('Form submission error', error);
-      toast.error('Failed to submit the form. Please try again.');
-    }
+  const [isPending, startTransition] = useTransition();
+
+  function onSubmit(values: z.infer<typeof vehicleFormSchema>) {
+    startTransition(async () => {
+      const { error, message } = await addVehicle(values);
+      if (!error) {
+        toast.success('Vehicle added successfully');
+        form.reset();
+        redirect('/vehicles');
+      } else toast.error(message);
+    });
   }
 
   return (
@@ -55,7 +53,6 @@ export function VehicleForm() {
                   <FormControl>
                     <Input placeholder="Enter here" type="text" {...field} />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
@@ -70,7 +67,6 @@ export function VehicleForm() {
                   <FormControl>
                     <Input placeholder="Enter here" type="text" {...field} />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
@@ -90,7 +86,6 @@ export function VehicleForm() {
                   <FormControl>
                     <Input placeholder="Enter here" type="text" {...field} />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
@@ -105,7 +100,6 @@ export function VehicleForm() {
                   <FormControl>
                     <Input placeholder="Enter here" type="text" {...field} />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
@@ -120,7 +114,6 @@ export function VehicleForm() {
                   <FormControl>
                     <Input placeholder="Enter here" type="text" {...field} />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
@@ -139,16 +132,21 @@ export function VehicleForm() {
                 <FormItem>
                   <FormLabel>Rent per 30 mins</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter here" type="number" {...field} />
+                    <Input
+                      placeholder="Enter here"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
                   </FormControl>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
         </div>
-        <Button type="submit">Submit</Button>
+        <Button type="submit" isLoading={isPending}>
+          Submit
+        </Button>
       </form>
     </Form>
   );

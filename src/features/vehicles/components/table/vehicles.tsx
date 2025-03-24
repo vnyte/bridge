@@ -3,8 +3,8 @@ import { VehicleDataTable } from './data-table';
 import { columns } from './columns';
 import { getVehicles } from '../../server/db';
 
-export async function Vehicles({ searchParams }: { searchParams: { name: string } }) {
-  const data = await getVehicles(searchParams.name);
+export async function Vehicles({ name }: { name?: string }) {
+  const data = await getVehicles(name);
 
   return (
     <Suspense fallback={<div>Loading...</div>}>

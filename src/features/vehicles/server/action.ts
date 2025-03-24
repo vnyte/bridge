@@ -1,12 +1,14 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { formSchema } from '../components/form';
 import { z } from 'zod';
 import { getCurrentOrganizationBranchId } from '@/server/db';
 import { addVehicle as addVehicleInDB } from './db';
+import { ActionReturnType } from '@/types/actions';
+import { vehicleFormSchema } from '../schemas/vehicles';
+import { revalidatePath } from 'next/cache';
 
-export async function addVehicle(unsafeData: z.infer<typeof formSchema>) {
+export async function addVehicle(unsafeData: z.infer<typeof vehicleFormSchema>): ActionReturnType {
   try {
     const { userId, orgId } = await auth();
 
@@ -15,7 +17,7 @@ export async function addVehicle(unsafeData: z.infer<typeof formSchema>) {
     }
 
     // Validate the data
-    const { success, data } = formSchema.safeParse(unsafeData);
+    const { success, data } = vehicleFormSchema.safeParse(unsafeData);
 
     if (!success) {
       return { error: true, message: 'Invalid vehicle data' };
@@ -27,7 +29,7 @@ export async function addVehicle(unsafeData: z.infer<typeof formSchema>) {
       return { error: true, message: 'Branch not found' };
     }
 
-    const vehicle = await addVehicleInDB({
+    await addVehicleInDB({
       ...data,
       branchId,
       orgId,
@@ -37,7 +39,6 @@ export async function addVehicle(unsafeData: z.infer<typeof formSchema>) {
     return {
       error: false,
       message: 'Vehicle added successfully',
-      vehicleId: vehicle.id,
     };
   } catch (error) {
     console.error('Error adding vehicle:', error);

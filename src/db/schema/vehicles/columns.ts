@@ -7,7 +7,7 @@ export const VehicleTable = pgTable('vehicles', {
   rent: integer('rent').notNull(),
 
   pucExpiry: date('puc_expiry'),
-  insuranceExpiry: date('puc_expiry'),
+  insuranceExpiry: date('insurance_expiry'),
   registrationExpiry: date('registration_expiry'),
 
   branchId: uuid('branch_id').notNull(),

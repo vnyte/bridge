@@ -77,6 +77,11 @@ export const BranchesStep = () => {
               )}
             </div>
           ))}
+
+          {/* Show general error message if there's a branches array-level error */}
+          {errors.branches?.message && (
+            <div className="text-red-500 text-sm mt-1">{errors.branches.message}</div>
+          )}
         </div>
 
         <Button type="button" variant="text" onClick={append}>

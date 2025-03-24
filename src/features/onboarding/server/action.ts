@@ -4,10 +4,9 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { OnboardingFormValues } from '../components/types';
 import { onboardingFormSchema } from '../components/types';
 import { createTenantWithBranches } from './db';
+import { ActionReturnType } from '@/types/actions';
 
-export async function createTenant(
-  unsafeData: OnboardingFormValues
-): Promise<{ error: boolean; message: string } | undefined> {
+export async function createTenant(unsafeData: OnboardingFormValues): ActionReturnType {
   const { userId } = await auth();
   const { success, data } = onboardingFormSchema.safeParse(unsafeData);
 

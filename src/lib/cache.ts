@@ -18,6 +18,7 @@ export type ValidTags =
 
 export const CACHE_TAGS = {
   tenants: 'tenants',
+  vehicles: 'vehicles',
 } as const;
 
 export function getTenantTag(tenantId: string, tag: keyof typeof CACHE_TAGS) {
@@ -62,6 +63,7 @@ export function revalidateDbCache({
   if (userId != null) {
     revalidateTag(getUserTag(userId, tag));
   }
+
   if (id != null) {
     revalidateTag(getIdTag(id, tag));
   }
