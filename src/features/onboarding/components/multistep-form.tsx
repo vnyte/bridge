@@ -8,6 +8,10 @@ import SchoolNameStep from './steps/school-name';
 import BranchesStep from './steps/branches';
 import React from 'react';
 import { onboardingFormSchema, OnboardingFormValues } from './types';
+import { createTenant } from '../server/action';
+import { redirect, useRouter } from 'next/navigation';
+import { setTimeout } from 'timers';
+import { toast } from 'sonner';
 
 // Define the step configuration with components
 export type StepKey = 'schoolName' | 'branches';
@@ -51,10 +55,19 @@ export const MultistepForm = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStepKey = stepOrder[currentStepIndex];
   const currentStep = steps[currentStepKey];
+  const router = useRouter();
 
   // Handle form submission
-  const onSubmit: SubmitHandler<OnboardingFormValues> = (data) => {
-    console.log(data);
+  const onSubmit: SubmitHandler<OnboardingFormValues> = async (data) => {
+    const response = await createTenant(data);
+
+    if (!response?.error) {
+      toast.success('Created successfully');
+      setTimeout(() => {
+        router.refresh();
+        router.push('/');
+      }, 1000);
+    }
   };
 
   // Handle next step

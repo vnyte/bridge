@@ -1,91 +1,38 @@
 import { db } from '@/db';
 import { BranchTable, TenantTable } from '@/db/schema';
-import { CACHE_TAGS, revalidateDbCache } from '@/lib/cache';
-import { inArray } from 'drizzle-orm';
 
-export async function createTenant(data: typeof TenantTable.$inferInsert) {
-  try {
-    const [tenant] = await db.insert(TenantTable).values(data).returning({
-      id: TenantTable.id,
-      ownerId: TenantTable.ownerId,
-    });
+export async function createTenantWithBranches(
+  tenantData: typeof TenantTable.$inferInsert,
+  branchesData: Array<Omit<typeof BranchTable.$inferInsert, 'tenantId'>>
+) {
+  // Use a transaction to ensure all database operations succeed or fail together
+  return await db.transaction(async (tx) => {
+    try {
+      // Create tenant
+      const [tenant] = await tx.insert(TenantTable).values(tenantData).returning({
+        id: TenantTable.id,
+        ownerId: TenantTable.ownerId,
+      });
 
-    revalidateDbCache({
-      tag: CACHE_TAGS.tenants,
-      userId: tenant.ownerId,
-      tenantId: tenant.id,
-    });
+      // Create branches with the tenant ID
+      const branchesWithTenantId = branchesData.map((branch) => ({
+        ...branch,
+        tenantId: tenant.id,
+      }));
 
-    return tenant;
-  } catch (error) {
-    console.error('Error creating school:', error);
-    throw error;
-  }
-}
-
-export async function createBranch(data: typeof BranchTable.$inferInsert) {
-  try {
-    const [branch] = await db.insert(BranchTable).values(data).returning({
-      id: BranchTable.id,
-      createdBy: BranchTable.createdBy,
-      tenantId: BranchTable.tenantId,
-    });
-
-    revalidateDbCache({
-      tag: CACHE_TAGS.tenants,
-      userId: branch.createdBy,
-      tenantId: branch.tenantId,
-    });
-
-    return branch;
-  } catch (error) {
-    console.error('Error creating branch:', error);
-    throw error;
-  }
-}
-
-export async function deleteTenant(tennatId: string) {
-  try {
-    const [tenant] = await db.delete(TenantTable).where(eq(TenantTable.id, tennatId)).returning({
-      id: TenantTable.id,
-      ownerId: TenantTable.ownerId,
-    });
-
-    revalidateDbCache({
-      tag: CACHE_TAGS.tenants,
-      userId: tenant.ownerId,
-      tenantId: tenant.id,
-    });
-
-    return tenant;
-  } catch (error) {
-    console.error('Error deleting tenant:', error);
-    throw error;
-  }
-}
-
-export async function deleteBranches(branchIds: string[]) {
-  try {
-    const deletedBranches = await db
-      .delete(BranchTable)
-      .where(inArray(BranchTable.id, branchIds))
-      .returning({
+      const branches = await tx.insert(BranchTable).values(branchesWithTenantId).returning({
         id: BranchTable.id,
-        tenantId: BranchTable.tenantId,
         createdBy: BranchTable.createdBy,
+        tenantId: BranchTable.tenantId,
+        orgId: BranchTable.orgId,
       });
 
-    deletedBranches.forEach((branch) => {
-      revalidateDbCache({
-        tag: CACHE_TAGS.tenants,
-        userId: branch.createdBy,
-        tenantId: branch.tenantId,
-      });
-    });
-
-    return deletedBranches;
-  } catch (error) {
-    console.error('Error deleting branches:', error);
-    throw error;
-  }
+      // Return both tenant and branches
+      return { tenant, branches };
+    } catch (error) {
+      // Transaction will automatically roll back if an error occurs
+      console.error('Error in transaction:', error);
+      throw error;
+    }
+  });
 }

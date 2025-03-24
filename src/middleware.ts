@@ -17,6 +17,7 @@ export default clerkMiddleware(async (auth, req) => {
     // Type-safe access to publicMetadata
     const publicMetadata =
       (sessionClaims?.publicMetadata as { isOnboardingComplete?: boolean }) || {};
+
     const isOnboardingComplete = !!publicMetadata.isOnboardingComplete;
 
     // If user is already onboarded but tries to access onboarding route, redirect to home

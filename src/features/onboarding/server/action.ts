@@ -3,14 +3,7 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { OnboardingFormValues } from '../components/types';
 import { onboardingFormSchema } from '../components/types';
-import {
-  createBranch as createBranchAsDB,
-  createTenant as createTenantInDB,
-  deleteBranches as deleteBranchesInDB,
-} from './db';
-import { db } from '@/db';
-import { TenantTable } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createTenantWithBranches } from './db';
 
 export async function createTenant(
   unsafeData: OnboardingFormValues
@@ -26,46 +19,58 @@ export async function createTenant(
     return { error: true, message: 'User not authenticated' };
   }
 
-  // Keep track of created resources for potential rollback
-  let tenant: { id: string; ownerId: string } | null = null;
-  const createdClerkOrgIds: string[] = [];
-  const createdBranchIds: string[] = [];
+  // Keep track of created Clerk resources for potential rollback
+  const createdorgIds: string[] = [];
 
   try {
-    // Create tenant in our database
-    tenant = await createTenantInDB({
-      name: data.schoolName,
-      ownerId: userId,
-    });
-
     const clerk = await clerkClient();
+    const branchesData = [];
 
-    // Create branches and organizations
+    // Create organizations in Clerk
     for (const branch of data.branches) {
       // Create organization in Clerk
       const clerkOrg = await clerk.organizations.createOrganization({
-        name: branch.name,
+        name: `${data.schoolName} - ${branch.name}`,
         createdBy: userId,
         publicMetadata: {
-          tenantId: tenant.id,
+          // We'll update this after tenant creation
+          tenantId: '',
         },
       });
-      createdClerkOrgIds.push(clerkOrg.id);
 
-      // Create branch in our database
-      const createdBranch = await createBranchAsDB({
+      createdorgIds.push(clerkOrg.id);
+
+      // Prepare branch data for database transaction
+      branchesData.push({
         name: branch.name,
-        clerkOrgId: clerkOrg.id,
-        tenantId: tenant.id,
+        orgId: clerkOrg.id,
         createdBy: userId,
       });
-      createdBranchIds.push(createdBranch.id);
+    }
+
+    const tenantData = {
+      name: data.schoolName,
+      ownerId: userId,
+    };
+
+    // Create all branches in a single transaction with the tenant
+    const { tenant, branches } = await createTenantWithBranches(tenantData, branchesData);
+
+    // Update Clerk organizations with the correct tenantId and branchId
+    for (const orgId of createdorgIds) {
+      await clerk.organizations.updateOrganization(orgId, {
+        publicMetadata: {
+          tenantId: tenant.id,
+          branchId: branches.find((b) => b.orgId === orgId)?.id,
+        },
+      });
     }
 
     // Update user metadata in Clerk
     await clerk.users.updateUserMetadata(userId, {
       publicMetadata: {
         tenantId: tenant.id,
+        branches: branches.map((b) => b.id),
         isOnboardingComplete: true,
       },
     });
@@ -74,8 +79,10 @@ export async function createTenant(
   } catch (error) {
     console.error('Error during tenant/branch creation:', error);
 
-    // Rollback everything if any step fails
-    await rollbackCreatedResources(tenant?.id, createdBranchIds, createdClerkOrgIds, userId);
+    // Rollback Clerk resources if any exist
+    await rollbackClerkResources(createdorgIds, userId);
+
+    // Database operations will be automatically rolled back by the transaction
 
     return {
       error: true,
@@ -87,33 +94,18 @@ export async function createTenant(
   }
 }
 
-// Helper function to rollback created resources
-async function rollbackCreatedResources(
-  tenantId: string | undefined,
-  branchIds: string[],
-  clerkOrgIds: string[],
-  userId: string
-): Promise<void> {
+// Helper function to rollback Clerk resources
+async function rollbackClerkResources(orgIds: string[], userId: string): Promise<void> {
   try {
     const clerk = await clerkClient();
 
-    // Rollback branches in our database
-    if (branchIds.length > 0) {
-      await deleteBranchesInDB(branchIds);
-    }
-
     // Rollback organizations in Clerk
-    for (const orgId of clerkOrgIds) {
+    for (const orgId of orgIds) {
       try {
         await clerk.organizations.deleteOrganization(orgId);
       } catch (e) {
         console.error(`Failed to delete Clerk organization ${orgId}:`, e);
       }
-    }
-
-    // Rollback tenant in our database
-    if (tenantId) {
-      await db.delete(TenantTable).where(eq(TenantTable.id, tenantId));
     }
 
     // Reset user metadata if needed
@@ -129,6 +121,6 @@ async function rollbackCreatedResources(
     }
   } catch (rollbackError) {
     // Log rollback errors but don't throw - we've already caught the original error
-    console.error('Error during rollback:', rollbackError);
+    console.error('Error during Clerk rollback:', rollbackError);
   }
 }
