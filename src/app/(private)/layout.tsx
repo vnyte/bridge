@@ -9,7 +9,7 @@ export default async function PrivateLayout({
     <div className="flex min-h-screen bg-gray-50 p-6">
       <Sidebar />
       <main className="flex-1 overflow-auto px-6">
-        <div className="bg-white rounded-xl h-full">{children}</div>
+        <div className="bg-white rounded-xl h-full p-6">{children}</div>
       </main>
     </div>
   );

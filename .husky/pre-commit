@@ -1,1 +1,4 @@
-bun test
+#!/usr/bin/env sh
+
+# Run lint-staged to check formatting and linting
+bun lint-staged

@@ -5,6 +5,6 @@ export const TenantTable = pgTable('tenant', {
   name: text('name').notNull(),
   ownerId: text('owner_id').notNull(),
 
-  createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });

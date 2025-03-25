@@ -9,3 +9,20 @@ export * from './branches/relations';
 
 export * from './vehicle-documents/columns';
 export * from './vehicle-documents/relations';
+
+export * from './client/columns';
+export * from './client/relations';
+
+export * from './plan/columns';
+export * from './plan/relations';
+
+export * from './driving-licenses/columns';
+export * from './driving-licenses/relations';
+
+export * from './learning-licenses/columns';
+export * from './learning-licenses/relations';
+
+export * from './enums';
+
+export * from './client-documents/columns';
+export * from './client-documents/relations';

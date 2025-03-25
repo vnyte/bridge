@@ -6,7 +6,6 @@ import { getCurrentOrganizationBranchId } from '@/server/db';
 import { addVehicle as addVehicleInDB } from './db';
 import { ActionReturnType } from '@/types/actions';
 import { vehicleFormSchema } from '../schemas/vehicles';
-import { revalidatePath } from 'next/cache';
 
 export async function addVehicle(unsafeData: z.infer<typeof vehicleFormSchema>): ActionReturnType {
   try {

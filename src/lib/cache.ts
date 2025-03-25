@@ -19,6 +19,7 @@ export type ValidTags =
 export const CACHE_TAGS = {
   tenants: 'tenants',
   vehicles: 'vehicles',
+  branch: 'branch',
 } as const;
 
 export function getTenantTag(tenantId: string, tag: keyof typeof CACHE_TAGS) {

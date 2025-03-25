@@ -1,6 +1,15 @@
 import { db } from '@/db';
+import { CACHE_TAGS, dbCache, getUserTag } from '@/lib/cache';
 import { auth } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
+
+export const _getCurrentOrganizationBranchId = async (orgId: string) => {
+  const branch = await db.query.BranchTable.findFirst({
+    where: (table) => eq(table.orgId, orgId),
+  });
+
+  return branch?.id || null;
+};
 
 export const getCurrentOrganizationBranchId = async () => {
   const { userId, orgId } = await auth();
@@ -9,9 +18,9 @@ export const getCurrentOrganizationBranchId = async () => {
     throw new Error('User not authenticated or not in an organization');
   }
 
-  const branch = await db.query.BranchTable.findFirst({
-    where: (table) => eq(table.orgId, orgId),
+  const cacheFn = dbCache(_getCurrentOrganizationBranchId, {
+    tags: [getUserTag(userId, CACHE_TAGS.branch)],
   });
 
-  return branch?.id || null;
+  return cacheFn(orgId);
 };

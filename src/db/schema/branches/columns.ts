@@ -9,6 +9,6 @@ export const BranchTable = pgTable('branches', {
   tenantId: uuid('tenant_id').notNull(),
   createdBy: text('created_by').notNull(),
 
-  createdAt: timestamp('created_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
