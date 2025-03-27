@@ -14,7 +14,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { BloodGroupEnum, GenderEnum, CitizenStatusEnum } from '@/db/schema/client/columns';
-import { TypographyH4, TypographyP } from '@/components/ui/typography';
+import { TypographyH5, TypographyP } from '@/components/ui/typography';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export const PersonalInfoStep = () => {
@@ -24,7 +24,7 @@ export const PersonalInfoStep = () => {
     <div className="space-y-10">
       {/* Basic Information */}
       <div className="grid grid-cols-12">
-        <TypographyH4 className="col-span-3">Personal Details</TypographyH4>
+        <TypographyH5 className="col-span-3">Personal Details</TypographyH5>
 
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
           <FormField
@@ -180,7 +180,7 @@ export const PersonalInfoStep = () => {
       </div>
 
       <div className="grid grid-cols-12">
-        <TypographyH4 className="col-span-3">Contact Details</TypographyH4>
+        <TypographyH5 className="col-span-3">Contact Details</TypographyH5>
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
           <FormField
             control={control}
@@ -240,7 +240,7 @@ export const PersonalInfoStep = () => {
       </div>
 
       <div className="grid grid-cols-12">
-        <TypographyH4 className="col-span-3">Address</TypographyH4>
+        <TypographyH5 className="col-span-3">Address</TypographyH5>
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
           <FormField
             control={control}
@@ -425,8 +425,8 @@ export const PersonalInfoStep = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-12">
-        <TypographyH4 className="col-span-3">Citizenship</TypographyH4>
+      <div className="grid grid-cols-12 align-center">
+        <TypographyH5 className="col-span-3">Citizenship</TypographyH5>
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
           <FormField
             control={control}

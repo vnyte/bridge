@@ -101,16 +101,16 @@ export const MultistepForm = () => {
 
   return (
     <FormProvider {...methods}>
-      <div className="h-full flex flex-col py-10">
+      <div className="h-full flex flex-col py-10 gap-4">
         {/* Form content - scrollable area */}
-        <ScrollArea className="h-[calc(100vh-240px)] pr-10">
+        <ScrollArea className="h-[calc(100vh-320px)] pr-10">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 pb-24">
             {stepComponents[currentStep]}
           </form>
         </ScrollArea>
 
         {/* Navigation buttons - fixed at the bottom */}
-        <div className="flex-none bg-white py-4 px-6 border-t flex justify-between">
+        <div className="bg-white py-4 px-6 border-t flex justify-between">
           <Button
             type="button"
             variant="outline"

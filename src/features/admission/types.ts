@@ -9,7 +9,7 @@ import {
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
 import { PlanTable } from '@/db/schema/plan/columns';
-import { LicenseTypeEnum } from '@/db/schema/enums';
+import { LicenseClassEnum } from '@/db/schema/enums';
 
 // Create schemas directly from database tables
 export const personalInfoSchema = createInsertSchema(ClientTable, {
@@ -39,9 +39,9 @@ export const personalInfoSchema = createInsertSchema(ClientTable, {
 });
 
 export const learningLicenseSchema = createInsertSchema(LearningLicenseTable, {
-  type: z.enum(LicenseTypeEnum.enumValues, {
-    required_error: 'License type is required',
-  }),
+  class: z
+    .array(z.enum(LicenseClassEnum.enumValues))
+    .min(1, 'At least one license class is required'),
   testConductedOn: z.date().min(new Date('1900-01-01'), 'Invalid test date').optional().nullable(),
   licenseNumber: z.string().optional().nullable(),
   issueDate: z.date().min(new Date('1900-01-01'), 'Invalid issue date').optional().nullable(),
@@ -50,9 +50,9 @@ export const learningLicenseSchema = createInsertSchema(LearningLicenseTable, {
 }).omit({ clientId: true, createdAt: true, updatedAt: true });
 
 export const drivingLicenseSchema = createInsertSchema(DrivingLicenseTable, {
-  type: z.enum(LicenseTypeEnum.enumValues, {
-    required_error: 'License type is required',
-  }),
+  class: z
+    .array(z.enum(LicenseClassEnum.enumValues))
+    .min(1, 'At least one license class is required'),
   appointmentDate: z
     .date()
     .min(new Date('1900-01-01'), 'Invalid appointment date')

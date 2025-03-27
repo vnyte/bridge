@@ -11,6 +11,7 @@ export const BloodGroupEnum = pgEnum('blood_group', [
   'O-',
 ]);
 export const GenderEnum = pgEnum('gender', ['MALE', 'FEMALE', 'OTHER']);
+
 export const CitizenStatusEnum = pgEnum('citizen_status', [
   'BIRTH',
   'NATURALIZED',
@@ -56,7 +57,8 @@ export const ClientTable = pgTable('clients', {
   permanentCountry: text('permanent_country'),
   permanentPincode: text('permanent_pincode'),
 
-  citizenStatus: CitizenStatusEnum().default('BIRTH').notNull(),
+  citizenStatus: CitizenStatusEnum().default('BIRTH'),
+
   branchId: uuid('branch_id').notNull(),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),

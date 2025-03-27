@@ -1,10 +1,10 @@
-import { LicenseTypeEnum } from '@/db/schema/enums';
+import { LicenseClassEnum } from '@/db/schema/enums';
 import { date, pgTable, text, uuid, timestamp } from 'drizzle-orm/pg-core';
 
 export const DrivingLicenseTable = pgTable('driving_licenses', {
   id: uuid('id').primaryKey().defaultRandom(),
 
-  type: LicenseTypeEnum().notNull(),
+  class: LicenseClassEnum('class').array(),
 
   appointmentDate: date('appointment_date', { mode: 'date' }),
   licenseNumber: text('license_number'),

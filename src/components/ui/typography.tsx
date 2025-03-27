@@ -58,6 +58,20 @@ export function TypographyH4({
   );
 }
 
+export function TypographyH5({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <h5 className={cn('scroll-m-20 text-md font-semibold tracking-tight', className)}>
+      {children}
+    </h5>
+  );
+}
+
 export function TypographyP({
   children,
   className,

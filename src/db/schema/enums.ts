@@ -1,6 +1,6 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
 
-export const LicenseTypeEnum = pgEnum('license_types', [
+export const LicenseClassEnum = pgEnum('license_classes', [
   'LMV',
   'MCWG',
   'MCWOG',
