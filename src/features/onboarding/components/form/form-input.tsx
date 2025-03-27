@@ -23,9 +23,7 @@ function MultiStepFormInput({
         {...props}
       />
       {error && (
-        <p className="text-red-500 text-sm mt-1 absolute left-0 right-0 text-center">
-          {error}
-        </p>
+        <p className="text-red-500 text-sm mt-1 absolute left-0 right-0 text-center">{error}</p>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { MultistepForm } from '@/features/onboarding/components/multistep-form';
+import { MultistepForm } from '@/features/onboarding/components/form/multistep-form';
 
 export default function OnboardingPage() {
   return (

@@ -1,29 +1,9 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { OrganizationSwitcher } from '@clerk/nextjs';
 import { SignOutButton } from '@clerk/nextjs';
 import { LogOut } from 'lucide-react';
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Customers', href: '/customers' },
-  { label: 'Payments', href: '/payments' },
-  { label: 'Sessions Availability', href: '/calendar' },
-  { label: 'Vehicles', href: '/vehicles' },
-  { label: 'Staff', href: '/staff' },
-] as const;
-
-function NavItem({ item }: { item: (typeof navItems)[number] }) {
-  return (
-    <Link href={item.href} className="block">
-      <Button
-        variant="ghost"
-        className="w-full h-full min-h-[40px] py-4 px-2 cursor-pointer justify-start"
-      >
-        <span className="text-base font-medium text-gray-600">{item.label}</span>
-      </Button>
-    </Link>
-  );
-}
+import { navItems } from './nav-items';
+import { NavItem } from './nav-item';
 
 export function Sidebar() {
   return (

@@ -12,7 +12,6 @@ export const LearningLicenseTable = pgTable('learning_licenses', {
   type: LicenseTypeEnum(),
 
   clientId: uuid('client_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
 
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),

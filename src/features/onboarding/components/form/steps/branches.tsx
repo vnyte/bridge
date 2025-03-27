@@ -5,7 +5,7 @@ import { TypographyH1, TypographyMuted } from '@/components/ui/typography';
 import { PlusCircle } from 'lucide-react';
 import { Controller, useFormContext } from 'react-hook-form';
 import MultiStepFormInput from '../form-input';
-import { OnboardingFormValues } from '../types';
+import { OnboardingFormValues } from '../../types';
 
 // Type for branch field in UI
 export type BranchField = {

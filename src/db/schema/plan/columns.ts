@@ -8,7 +8,6 @@ export const PlanTable = pgTable('plans', {
   joiningDate: date('joining_date', { mode: 'date' }).notNull(),
 
   clientId: uuid('client_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

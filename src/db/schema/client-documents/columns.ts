@@ -10,7 +10,6 @@ export const ClientDocumentTable = pgTable('client_documents', {
   type: clientDocumentTypes(),
 
   clientId: uuid('client_id').notNull(),
-  branchId: uuid('branch_id').notNull(),
 
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
