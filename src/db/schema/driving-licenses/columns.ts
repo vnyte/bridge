@@ -4,11 +4,12 @@ import { date, pgTable, text, uuid, timestamp } from 'drizzle-orm/pg-core';
 export const DrivingLicenseTable = pgTable('driving_licenses', {
   id: uuid('id').primaryKey().defaultRandom(),
 
+  type: LicenseTypeEnum().notNull(),
+
   appointmentDate: date('appointment_date', { mode: 'date' }),
-  licenseNumber: text('license_number').notNull(),
-  issueDate: date('issue_date', { mode: 'date' }).notNull(),
-  expiryDate: date('expiry_date', { mode: 'date' }).notNull(),
-  type: LicenseTypeEnum(),
+  licenseNumber: text('license_number'),
+  issueDate: date('issue_date', { mode: 'date' }),
+  expiryDate: date('expiry_date', { mode: 'date' }),
 
   // test details
   applicationNumber: text('application_number'),

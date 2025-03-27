@@ -2,10 +2,10 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
-import { getCurrentOrganizationBranchId } from '@/server/db';
 import { addVehicle as addVehicleInDB } from './db';
 import { ActionReturnType } from '@/types/actions';
 import { vehicleFormSchema } from '../schemas/vehicles';
+import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 
 export async function addVehicle(unsafeData: z.infer<typeof vehicleFormSchema>): ActionReturnType {
   try {
