@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { VehicleDataTable } from './data-table';
 import { columns } from './columns';
-import { getVehicles } from '../../server/db';
+import { getVehicles } from '@/server/db/vehicle';
 
 export async function Vehicles({ name }: { name?: string }) {
   const data = await getVehicles(name);

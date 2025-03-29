@@ -62,7 +62,7 @@ export function TypographyH5({
   children,
   className,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 }) {
   return (

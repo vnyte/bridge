@@ -31,7 +31,6 @@ export async function addVehicle(unsafeData: z.infer<typeof vehicleFormSchema>):
     await addVehicleInDB({
       ...data,
       branchId,
-      orgId,
       createdBy: userId,
     });
 

@@ -13,17 +13,20 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useVehicles } from '@/hooks/use-vehicles';
+import { TypographyH5 } from '@/components/ui/typography';
 
 export const PlanStep = () => {
   const { control } = useFormContext<AdmissionFormValues>();
   const { data: vehicles, isLoading } = useVehicles();
 
-  return (
-    <div className="space-y-8">
-      <h2 className="text-2xl font-bold">Training Plan</h2>
+  console.log(vehicles);
 
-      <div className="rounded-lg border p-6 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  return (
+    <div className="space-y-10">
+      {/* Training Plan */}
+      <div className="grid grid-cols-12">
+        <TypographyH5 className="col-span-3">Vehicle</TypographyH5>
+        <div className="grid grid-cols-3 col-span-9 gap-6">
           <FormField
             control={control}
             name="plan.vehicleId"
@@ -54,26 +57,12 @@ export const PlanStep = () => {
               </FormItem>
             )}
           />
+        </div>
+      </div>
 
-          <FormField
-            control={control}
-            name="plan.joiningDate"
-            render={() => (
-              <FormItem>
-                <FormLabel>Joining Date*</FormLabel>
-                <FormControl>
-                  <DatePicker
-                    name="plan.joiningDate"
-                    control={control}
-                    placeholderText="Select joining date"
-                    minDate={new Date()}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+      <div className="grid grid-cols-12">
+        <TypographyH5 className="col-span-3">Session Details</TypographyH5>
+        <div className="grid grid-cols-3 col-span-9 gap-6">
           <FormField
             control={control}
             name="plan.numberOfSessions"
@@ -92,7 +81,6 @@ export const PlanStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="plan.sessionDurationInMinutes"
@@ -113,31 +101,27 @@ export const PlanStep = () => {
           />
         </div>
       </div>
-
-      <div className="rounded-lg border p-6 shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Plan Summary</h3>
-        <div className="grid grid-cols-1 gap-4">
-          <div className="flex justify-between p-4 bg-muted rounded-md">
-            <span>Total Sessions:</span>
-            <span className="font-medium">{control._formValues.plan?.numberOfSessions || 0}</span>
-          </div>
-          <div className="flex justify-between p-4 bg-muted rounded-md">
-            <span>Session Duration:</span>
-            <span className="font-medium">
-              {control._formValues.plan?.sessionDurationInMinutes || 0} minutes
-            </span>
-          </div>
-          <div className="flex justify-between p-4 bg-muted rounded-md">
-            <span>Total Training Hours:</span>
-            <span className="font-medium">
-              {(
-                ((control._formValues.plan?.numberOfSessions || 0) *
-                  (control._formValues.plan?.sessionDurationInMinutes || 0)) /
-                60
-              ).toFixed(1)}{' '}
-              hours
-            </span>
-          </div>
+      <div className="grid grid-cols-12">
+        <span className="col-span-3" />
+        <div className="grid grid-cols-3 col-span-9 gap-6">
+          <FormField
+            control={control}
+            name="plan.joiningDate"
+            render={() => (
+              <FormItem>
+                <FormLabel>Joining Date*</FormLabel>
+                <FormControl>
+                  <DatePicker
+                    name="plan.joiningDate"
+                    control={control}
+                    placeholderText="Select joining date"
+                    minDate={new Date()}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </div>
     </div>
