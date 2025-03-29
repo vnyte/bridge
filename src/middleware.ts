@@ -16,7 +16,12 @@ export default clerkMiddleware(async (auth, req) => {
 
     // Type-safe access to publicMetadata
     const publicMetadata =
-      (sessionClaims?.publicMetadata as { isOnboardingComplete?: boolean }) || {};
+      (sessionClaims?.publicMetadata as { isOnboardingComplete?: boolean; isOwner?: boolean }) ||
+      {};
+
+    if (Object.keys(publicMetadata).length > 0 && !publicMetadata.isOwner) {
+      return NextResponse.next();
+    }
 
     const isOnboardingComplete = !!publicMetadata.isOnboardingComplete;
 

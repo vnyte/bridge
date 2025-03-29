@@ -4,9 +4,8 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { OnboardingFormValues } from '../components/types';
 import { onboardingFormSchema } from '../components/types';
 import { createTenantWithBranches } from './db';
-import { ActionReturnType } from '@/types/actions';
 
-export async function createTenant(unsafeData: OnboardingFormValues): ActionReturnType {
+export async function createTenant(unsafeData: OnboardingFormValues) {
   const { userId } = await auth();
   const { success, data } = onboardingFormSchema.safeParse(unsafeData);
 
@@ -31,10 +30,6 @@ export async function createTenant(unsafeData: OnboardingFormValues): ActionRetu
       const clerkOrg = await clerk.organizations.createOrganization({
         name: `${data.schoolName} - ${branch.name}`,
         createdBy: userId,
-        publicMetadata: {
-          // We'll update this after tenant creation
-          tenantId: '',
-        },
       });
 
       createdorgIds.push(clerkOrg.id);
@@ -71,10 +66,14 @@ export async function createTenant(unsafeData: OnboardingFormValues): ActionRetu
         tenantId: tenant.id,
         branches: branches.map((b) => b.id),
         isOnboardingComplete: true,
+        isOwner: true,
       },
     });
 
-    return { error: false, message: 'Tenant created successfully' };
+    return {
+      error: false,
+      message: 'Tenant created successfully',
+    };
   } catch (error) {
     console.error('Error during tenant/branch creation:', error);
 
