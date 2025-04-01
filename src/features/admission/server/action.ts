@@ -10,11 +10,16 @@ import {
 import { auth } from '@clerk/nextjs/server';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 import { ActionReturnType } from '@/types/actions';
-import { upsertClientInDB, upsertLearningLicenseInDB, upsertDrivingLicenseInDB } from './db';
+import {
+  upsertClientInDB,
+  upsertLearningLicenseInDB,
+  upsertDrivingLicenseInDB,
+  getClientById as getClientByIdFromDB,
+} from './db';
 
 export const createClient = async (
   unsafeData: z.infer<typeof personalInfoSchema>
-): Promise<ActionReturnType & { clientId?: string }> => {
+): Promise<{ error: boolean; message: string } & { clientId?: string }> => {
   const { userId, orgId } = await auth();
 
   if (!userId || !orgId) {
@@ -115,5 +120,38 @@ export const createDrivingLicense = async (data: DrivingLicenseValues): ActionRe
   } catch (error) {
     console.error('Error processing driving license data:', error);
     return { error: true, message: 'Failed to save driving license information' };
+  }
+};
+
+export const getClientById = async (
+  clientId: string
+): Promise<
+  { error: boolean; message: string } & { data?: Awaited<ReturnType<typeof getClientByIdFromDB>> }
+> => {
+  const { userId, orgId } = await auth();
+
+  if (!userId || !orgId) {
+    return { error: true, message: 'User not authenticated or not in an organization' };
+  }
+
+  if (!clientId) {
+    return { error: true, message: 'Client ID is required' };
+  }
+
+  try {
+    const clientData = await getClientByIdFromDB(clientId);
+
+    if (!clientData) {
+      return { error: true, message: 'Client not found' };
+    }
+
+    return {
+      error: false,
+      message: 'Client data retrieved successfully',
+      data: clientData,
+    };
+  } catch (error) {
+    console.error('Error fetching client:', error);
+    return { error: true, message: 'Failed to fetch client data' };
   }
 };

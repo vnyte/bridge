@@ -3,6 +3,7 @@ import { ClientTable } from '@/db/schema';
 import { CACHE_TAGS, revalidateDbCache } from '@/lib/cache';
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
+import { eq } from 'drizzle-orm';
 
 export const upsertClientInDB = async (data: typeof ClientTable.$inferInsert) => {
   // Create a variable to track if this was an update operation
@@ -97,4 +98,17 @@ export const upsertDrivingLicenseInDB = async (data: typeof DrivingLicenseTable.
     license,
     isExistingLicense,
   };
+};
+
+export const getClientById = async (clientId: string) => {
+  const client = await db.query.ClientTable.findFirst({
+    where: eq(ClientTable.id, clientId),
+    with: {
+      learningLicense: true,
+      drivingLicense: true,
+      plan: true,
+    },
+  });
+
+  return client;
 };
