@@ -116,13 +116,18 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
 }
 
 function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
-  const { formDescriptionId } = useFormField();
+  const { formDescriptionId, error } = useFormField();
+
+  // Don't render the description if there's an error
+  if (error) {
+    return null;
+  }
 
   return (
     <p
       data-slot="form-description"
       id={formDescriptionId}
-      className={cn('text-muted-foreground text-xs absolute -bottom-10', className)}
+      className={cn('text-muted-foreground text-xs absolute top-full mt-1', className)}
       {...props}
     />
   );
@@ -140,7 +145,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn('text-destructive text-sm absolute -bottom-6', className)}
+      className={cn('text-destructive text-xs absolute top-full mt-1', className)}
       {...props}
     >
       {body}

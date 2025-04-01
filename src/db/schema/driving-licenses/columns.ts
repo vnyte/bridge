@@ -18,7 +18,7 @@ export const DrivingLicenseTable = pgTable('driving_licenses', {
   rto: text('rto'),
   department: text('department'),
 
-  clientId: uuid('client_id').notNull(),
+  clientId: uuid('client_id').notNull().unique(),
 
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),

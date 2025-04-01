@@ -29,8 +29,14 @@ export const personalInfoSchema = createInsertSchema(ClientTable, {
   address: z.string().min(1, 'Address is required'),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
-  country: z.string().min(1, 'Country is required'),
   pincode: z.string().min(1, 'Pincode is required'),
+
+  isCurrentAddressSameAsPermanentAddress: z.boolean().default(false),
+
+  permanentAddress: z.string().min(1, 'Permanent address is required'),
+  permanentCity: z.string().min(1, 'Permanent city is required'),
+  permanentState: z.string().min(1, 'Permanent state is required'),
+  permanentPincode: z.string().min(1, 'Permanent pincode is required'),
 
   citizenStatus: z.enum(CitizenStatusEnum.enumValues, {
     required_error: 'Citizen status is required',
@@ -46,7 +52,7 @@ export const learningLicenseSchema = createInsertSchema(LearningLicenseTable, {
   issueDate: z.date().min(new Date('1900-01-01'), 'Invalid issue date').optional().nullable(),
   expiryDate: z.date().min(new Date('1900-01-01'), 'Invalid expiry date').optional().nullable(),
   applicationNumber: z.string().optional().nullable(),
-}).omit({ clientId: true, createdAt: true, updatedAt: true });
+});
 
 export const drivingLicenseSchema = createInsertSchema(DrivingLicenseTable, {
   class: z
@@ -65,7 +71,7 @@ export const drivingLicenseSchema = createInsertSchema(DrivingLicenseTable, {
   imv: z.string().optional().nullable(),
   rto: z.string().optional().nullable(),
   department: z.string().optional().nullable(),
-}).omit({ clientId: true, createdAt: true, updatedAt: true });
+});
 
 export const planSchema = createInsertSchema(PlanTable, {
   vehicleId: z.string(),

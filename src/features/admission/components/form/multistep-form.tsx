@@ -9,8 +9,9 @@ import {
   admissionFormSchema,
   AdmissionFormValues,
   PersonalInfoValues,
-  LicenseStepValues,
   PlanValues,
+  LearningLicenseValues,
+  DrivingLicenseValues,
 } from '../../types';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -20,10 +21,12 @@ import { PlanStep } from './steps/plan';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useStepNavigation } from '../progress-bar/progress-bar';
 import { ActionReturnType } from '@/types/actions';
+import { createClient, createLearningLicense, createDrivingLicense } from '../../server/action';
 
 export const MultistepForm = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [clientId, setClientId] = React.useState<string | undefined>(undefined);
 
   const methods = useForm<AdmissionFormValues>({
     resolver: zodResolver(admissionFormSchema),
@@ -62,16 +65,82 @@ export const MultistepForm = () => {
 
   // Define step actions
   const handlePersonalStep = async (data: PersonalInfoValues): ActionReturnType => {
-    console.log(data);
-    // return createClient(data);
+    console.log('Processing personal info:', data);
+    const result = await createClient(data);
 
-    return Promise.resolve({ error: false, message: 'License information saved' });
+    // If the client was created successfully, store the clientId for later steps
+    if (!result.error && result.clientId) {
+      setClientId(result.clientId);
+    }
+
+    return result;
   };
 
-  const handleLicenseStep = async (data: LicenseStepValues): ActionReturnType => {
-    console.log(data);
-    // Placeholder for license step action
-    return Promise.resolve({ error: false, message: 'License information saved' });
+  const handleLicenseStep = async (data: {
+    learningLicense?: LearningLicenseValues;
+    drivingLicense?: DrivingLicenseValues;
+  }): ActionReturnType => {
+    console.log('Processing license info:', data);
+
+    if (!clientId) {
+      return Promise.resolve({
+        error: true,
+        message: 'Client ID not found. Please complete the personal information step first.',
+      });
+    }
+
+    const { learningLicense, drivingLicense } = data;
+
+    const hasClass = learningLicense?.class;
+    const hasLearningLicense = learningLicense && Object.keys(learningLicense).length > 0;
+    const hasDrivingLicense = drivingLicense && Object.keys(drivingLicense).length > 0;
+
+    try {
+      // Handle learning license if present
+      if (hasLearningLicense) {
+        const learningResult = await createLearningLicense({
+          ...learningLicense,
+          clientId,
+        });
+
+        // If learning license fails, return the learning result
+        if (learningResult.error) {
+          return learningResult;
+        }
+      }
+
+      // Handle driving license if present
+      if (hasDrivingLicense || hasClass) {
+        const drivingResult = await createDrivingLicense({
+          ...drivingLicense,
+          class: learningLicense?.class || [],
+          clientId,
+        });
+
+        // If driving license fails, return its error
+        if (drivingResult.error) {
+          return drivingResult;
+        }
+
+        // If both licenses were processed successfully, return a combined success message
+        return {
+          error: false,
+          message: 'Learning and driving license information saved successfully',
+        };
+      }
+
+      // This should never happen due to our checks above, but TypeScript needs it
+      return Promise.resolve({
+        error: true,
+        message: 'No license data was processed',
+      });
+    } catch (error) {
+      console.error('Error processing license data:', error);
+      return Promise.resolve({
+        error: true,
+        message: 'An unexpected error occurred while processing license data',
+      });
+    }
   };
 
   const handlePlanStep = async (data: PlanValues): ActionReturnType => {
@@ -89,7 +158,10 @@ export const MultistepForm = () => {
     },
     license: {
       component: <LicenseStep />,
-      onSubmit: (data: unknown) => handleLicenseStep(data as LicenseStepValues),
+      onSubmit: (data: unknown) =>
+        handleLicenseStep(
+          data as { learningLicense?: LearningLicenseValues; drivingLicense?: DrivingLicenseValues }
+        ),
       getData: () => ({
         learningLicense: getValues('learningLicense'),
         drivingLicense: getValues('drivingLicense'),
@@ -105,18 +177,29 @@ export const MultistepForm = () => {
   // Derive the step key type from the stepComponents object
   type StepKey = keyof typeof stepComponents;
 
-  // Map step keys to validation fields
-  const stepValidationFields: Record<StepKey, Path<AdmissionFormValues>[]> = {
-    personal: generateFieldPaths('personalInfo'),
-    license: [...generateFieldPaths('learningLicense'), ...generateFieldPaths('drivingLicense')],
-    plan: generateFieldPaths('plan'),
+  // Function to get validation fields for a specific step
+  const getStepValidationFields = (step: StepKey): Path<AdmissionFormValues>[] => {
+    switch (step) {
+      case 'personal':
+        return generateFieldPaths('personalInfo');
+      case 'license':
+        return [...generateFieldPaths('learningLicense'), ...generateFieldPaths('drivingLicense')];
+      case 'plan':
+        return generateFieldPaths('plan');
+      default:
+        return [];
+    }
   };
 
+  console.log('Step validation fields:', methods.formState.errors);
   // Handle next step navigation with validation
   const handleNext = async () => {
     try {
-      // Step 1: Validate the current step's fields
-      const fieldsToValidate = stepValidationFields[currentStep as StepKey];
+      // Step 1: Generate validation fields on demand for the current step
+      const currentStepKey = currentStep as StepKey;
+      const fieldsToValidate = getStepValidationFields(currentStepKey);
+
+      console.log('Fields to validate:', fieldsToValidate);
       const isStepValid = await trigger(fieldsToValidate);
 
       if (!isStepValid) {
@@ -128,7 +211,6 @@ export const MultistepForm = () => {
       // Step 2: Execute the step-specific action
       startTransition(async () => {
         // Get the current step's data and action handler
-        const currentStepKey = currentStep as StepKey;
         const stepData = stepComponents[currentStepKey].getData();
         const result = await stepComponents[currentStepKey].onSubmit(stepData);
 

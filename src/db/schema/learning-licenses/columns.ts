@@ -14,7 +14,7 @@ export const LearningLicenseTable = pgTable('learning_licenses', {
   // test details
   applicationNumber: text('application_number'),
 
-  clientId: uuid('client_id').notNull(),
+  clientId: uuid('client_id').notNull().unique(),
 
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),

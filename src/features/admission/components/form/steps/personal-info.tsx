@@ -50,11 +50,6 @@ export const PersonalInfoStep = () => {
     name: 'personalInfo.state',
   });
 
-  const currentCountry = useWatch({
-    control,
-    name: 'personalInfo.country',
-  });
-
   const currentPincode = useWatch({
     control,
     name: 'personalInfo.pincode',
@@ -66,18 +61,9 @@ export const PersonalInfoStep = () => {
       setValue('personalInfo.permanentAddress', currentAddress);
       setValue('personalInfo.permanentCity', currentCity);
       setValue('personalInfo.permanentState', currentState);
-      setValue('personalInfo.permanentCountry', currentCountry);
       setValue('personalInfo.permanentPincode', currentPincode);
     }
-  }, [
-    isSameAddress,
-    currentAddress,
-    currentCity,
-    currentState,
-    currentCountry,
-    currentPincode,
-    setValue,
-  ]);
+  }, [isSameAddress, currentAddress, currentCity, currentState, currentPincode, setValue]);
 
   return (
     <div className="space-y-10">

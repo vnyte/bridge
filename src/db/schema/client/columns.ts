@@ -37,25 +37,23 @@ export const ClientTable = pgTable('clients', {
   bloodGroup: BloodGroupEnum().notNull(),
   gender: GenderEnum().notNull(),
 
-  phoneNumber: text('phone_number').notNull(),
+  phoneNumber: text('phone_number').notNull().unique(),
   alternativePhoneNumber: text('alternative_phone_number'),
   email: text('email'),
 
   address: text('address').notNull(),
   city: text('city').notNull(),
   state: text('state').notNull(),
-  country: text('country').notNull(),
   pincode: text('pincode').notNull(),
 
   isCurrentAddressSameAsPermanentAddress: boolean(
     'is_current_address_same_as_permanent_address'
   ).default(false),
 
-  permanentAddress: text('permanent_address'),
-  permanentCity: text('permanent_city'),
-  permanentState: text('permanent_state'),
-  permanentCountry: text('permanent_country'),
-  permanentPincode: text('permanent_pincode'),
+  permanentAddress: text('permanent_address').notNull(),
+  permanentCity: text('permanent_city').notNull(),
+  permanentState: text('permanent_state').notNull(),
+  permanentPincode: text('permanent_pincode').notNull(),
 
   citizenStatus: CitizenStatusEnum().default('BIRTH'),
 

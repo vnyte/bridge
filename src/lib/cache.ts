@@ -21,6 +21,8 @@ export const CACHE_TAGS = {
   vehicles: 'vehicles',
   branch: 'branch',
   clients: 'clients',
+  learningLicenses: 'learning-licenses',
+  drivingLicenses: 'driving-licenses',
 } as const;
 
 export function getTenantTag(tenantId: string, tag: keyof typeof CACHE_TAGS) {

@@ -19,8 +19,6 @@ export const PlanStep = () => {
   const { control } = useFormContext<AdmissionFormValues>();
   const { data: vehicles, isLoading } = useVehicles();
 
-  console.log(vehicles);
-
   return (
     <div className="space-y-10">
       {/* Training Plan */}
@@ -43,6 +41,10 @@ export const PlanStep = () => {
                     {isLoading ? (
                       <SelectItem value="loading" disabled>
                         Loading vehicles...
+                      </SelectItem>
+                    ) : vehicles?.length === 0 ? (
+                      <SelectItem value="no-vehicles" disabled>
+                        No vehicles available
                       </SelectItem>
                     ) : (
                       vehicles?.map((vehicle) => (
