@@ -1,8 +1,15 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { AdmissionFormValues } from '@/features/admission/types';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -16,9 +23,61 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { BloodGroupEnum, GenderEnum, CitizenStatusEnum } from '@/db/schema/client/columns';
 import { TypographyH5, TypographyP } from '@/components/ui/typography';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useEffect } from 'react';
+import { Info } from 'lucide-react';
 
 export const PersonalInfoStep = () => {
-  const { control } = useFormContext<AdmissionFormValues>();
+  const { control, setValue } = useFormContext<AdmissionFormValues>();
+
+  // Watch for changes in the checkbox and address fields
+  const isSameAddress = useWatch({
+    control,
+    name: 'personalInfo.isCurrentAddressSameAsPermanentAddress',
+  });
+
+  const currentAddress = useWatch({
+    control,
+    name: 'personalInfo.address',
+  });
+
+  const currentCity = useWatch({
+    control,
+    name: 'personalInfo.city',
+  });
+
+  const currentState = useWatch({
+    control,
+    name: 'personalInfo.state',
+  });
+
+  const currentCountry = useWatch({
+    control,
+    name: 'personalInfo.country',
+  });
+
+  const currentPincode = useWatch({
+    control,
+    name: 'personalInfo.pincode',
+  });
+
+  // Update permanent address fields when checkbox is checked or current address fields change
+  useEffect(() => {
+    if (isSameAddress) {
+      setValue('personalInfo.permanentAddress', currentAddress);
+      setValue('personalInfo.permanentCity', currentCity);
+      setValue('personalInfo.permanentState', currentState);
+      setValue('personalInfo.permanentCountry', currentCountry);
+      setValue('personalInfo.permanentPincode', currentPincode);
+    }
+  }, [
+    isSameAddress,
+    currentAddress,
+    currentCity,
+    currentState,
+    currentCountry,
+    currentPincode,
+    setValue,
+  ]);
 
   return (
     <div className="space-y-10">
@@ -72,7 +131,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.guardianFirstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel required>Guardian Name</FormLabel>
+                <FormLabel>Guardian Name</FormLabel>
                 <FormControl>
                   <Input placeholder="First" value={field.value || ''} onChange={field.onChange} />
                 </FormControl>
@@ -112,7 +171,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.birthDate"
             render={() => (
               <FormItem>
-                <FormLabel>Date of Birth</FormLabel>
+                <FormLabel required>Date of Birth</FormLabel>
                 <FormControl>
                   <DatePicker
                     name="personalInfo.birthDate"
@@ -132,7 +191,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.bloodGroup"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Blood Group</FormLabel>
+                <FormLabel required>Blood Group</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -157,7 +216,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.gender"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Gender</FormLabel>
+                <FormLabel required>Gender</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -179,7 +238,7 @@ export const PersonalInfoStep = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-12">
+      <div className="grid grid-cols-12 pb-10">
         <TypographyH5 className="col-span-3">Contact Details</TypographyH5>
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
           <FormField
@@ -187,7 +246,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.phoneNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone Number</FormLabel>
+                <FormLabel required>Phone Number</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Phone number"
@@ -195,6 +254,10 @@ export const PersonalInfoStep = () => {
                     onChange={field.onChange}
                   />
                 </FormControl>
+                <FormDescription className="flex gap-1">
+                  <Info className="size-5 text-primary" /> This number will be used for updates,
+                  receipts, and reminders
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -247,7 +310,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.address"
             render={({ field }) => (
               <FormItem className="col-span-3">
-                <FormLabel>Address</FormLabel>
+                <FormLabel required>Full Address</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Address"
@@ -265,7 +328,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>City</FormLabel>
+                <FormLabel required>City</FormLabel>
                 <FormControl>
                   <Input placeholder="City" value={field.value || ''} onChange={field.onChange} />
                 </FormControl>
@@ -279,27 +342,9 @@ export const PersonalInfoStep = () => {
             name="personalInfo.state"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>State</FormLabel>
+                <FormLabel required>State</FormLabel>
                 <FormControl>
                   <Input placeholder="State" value={field.value || ''} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="personalInfo.country"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Country"
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -311,7 +356,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.pincode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pincode</FormLabel>
+                <FormLabel required>Pincode</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Pincode"
@@ -345,13 +390,14 @@ export const PersonalInfoStep = () => {
             control={control}
             name="personalInfo.permanentAddress"
             render={({ field }) => (
-              <FormItem className="col-span-2">
-                <FormLabel>Address</FormLabel>
+              <FormItem className="col-span-3">
+                <FormLabel required>Full Address</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Permanent address"
                     value={field.value || ''}
                     onChange={field.onChange}
+                    disabled={isSameAddress === true}
                   />
                 </FormControl>
                 <FormMessage />
@@ -364,9 +410,14 @@ export const PersonalInfoStep = () => {
             name="personalInfo.permanentCity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>City</FormLabel>
+                <FormLabel required>City</FormLabel>
                 <FormControl>
-                  <Input placeholder="City" value={field.value || ''} onChange={field.onChange} />
+                  <Input
+                    placeholder="City"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    disabled={isSameAddress === true}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -378,26 +429,13 @@ export const PersonalInfoStep = () => {
             name="personalInfo.permanentState"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>State</FormLabel>
-                <FormControl>
-                  <Input placeholder="State" value={field.value || ''} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="personalInfo.permanentCountry"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
+                <FormLabel required>State</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Country"
+                    placeholder="State"
                     value={field.value || ''}
                     onChange={field.onChange}
+                    disabled={isSameAddress === true}
                   />
                 </FormControl>
                 <FormMessage />
@@ -410,12 +448,13 @@ export const PersonalInfoStep = () => {
             name="personalInfo.permanentPincode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pincode</FormLabel>
+                <FormLabel required>Pincode</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Pincode"
                     value={field.value || ''}
                     onChange={field.onChange}
+                    disabled={isSameAddress === true}
                   />
                 </FormControl>
                 <FormMessage />
@@ -460,3 +499,5 @@ export const PersonalInfoStep = () => {
     </div>
   );
 };
+
+export default PersonalInfoStep;

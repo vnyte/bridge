@@ -17,7 +17,6 @@ export const personalInfoSchema = createInsertSchema(ClientTable, {
   lastName: z.string().min(1, 'Last name is required'),
   phoneNumber: z.string().min(1, 'Phone number is required'),
   email: z.string().email('Invalid email address').optional().nullable(),
-  branchId: z.string().uuid('Invalid branch ID'),
 
   birthDate: z.date().min(new Date('1900-01-01'), 'Invalid birth date'),
   bloodGroup: z.enum(BloodGroupEnum.enumValues, {
@@ -69,7 +68,7 @@ export const drivingLicenseSchema = createInsertSchema(DrivingLicenseTable, {
 }).omit({ clientId: true, createdAt: true, updatedAt: true });
 
 export const planSchema = createInsertSchema(PlanTable, {
-  vehicleId: z.string().uuid('Invalid vehicle ID'),
+  vehicleId: z.string(),
   numberOfSessions: z.number().min(1, 'Number of sessions is required'),
   sessionDurationInMinutes: z.number().min(1, 'Session duration is required'),
   joiningDate: z.date().min(new Date('1900-01-01'), 'Invalid joining date'),
@@ -86,5 +85,6 @@ export const admissionFormSchema = z.object({
 export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 export type LearningLicenseValues = z.infer<typeof learningLicenseSchema>;
 export type DrivingLicenseValues = z.infer<typeof drivingLicenseSchema>;
+export type LicenseStepValues = LearningLicenseValues | DrivingLicenseValues;
 export type PlanValues = z.infer<typeof planSchema>;
 export type AdmissionFormValues = z.infer<typeof admissionFormSchema>;

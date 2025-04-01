@@ -20,6 +20,7 @@ export const CACHE_TAGS = {
   tenants: 'tenants',
   vehicles: 'vehicles',
   branch: 'branch',
+  clients: 'clients',
 } as const;
 
 export function getTenantTag(tenantId: string, tag: keyof typeof CACHE_TAGS) {
@@ -50,15 +51,21 @@ export function revalidateDbCache({
   tag,
   userId,
   tenantId,
+  branchId,
   id,
 }: {
   tag: keyof typeof CACHE_TAGS;
   userId?: string;
   tenantId?: string;
+  branchId?: string;
   id?: string;
 }) {
   if (tenantId != null) {
     revalidateTag(getTenantTag(tenantId, tag));
+  }
+
+  if (branchId != null) {
+    revalidateTag(getIdTag(branchId, tag));
   }
 
   if (userId != null) {
