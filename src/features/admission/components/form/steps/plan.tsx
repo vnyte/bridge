@@ -111,13 +111,14 @@ export const PlanStep = () => {
             name="plan.joiningDate"
             render={() => (
               <FormItem>
-                <FormLabel>Joining Date*</FormLabel>
+                <FormLabel required>Joining Date</FormLabel>
                 <FormControl>
                   <DatePicker
                     name="plan.joiningDate"
                     control={control}
                     placeholderText="Select joining date"
-                    minDate={new Date()}
+                    minDate={new Date(new Date().setHours(0, 0, 0, 0))}
+                    maxDate={new Date(new Date().setFullYear(new Date().getFullYear() + 1))}
                   />
                 </FormControl>
                 <FormMessage />

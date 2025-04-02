@@ -7,7 +7,7 @@ export const addVehicle = async (data: typeof VehicleTable.$inferInsert) => {
 
   revalidateDbCache({
     tag: CACHE_TAGS.vehicles,
-    userId: data.createdBy,
+    branchId: data.branchId,
   });
 
   return vehicle;

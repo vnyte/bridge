@@ -14,6 +14,7 @@ formatCompactNumber(2090);
 export type ValidTags =
   | ReturnType<typeof getTenantTag>
   | ReturnType<typeof getUserTag>
+  | ReturnType<typeof getBranchTag>
   | ReturnType<typeof getIdTag>;
 
 export const CACHE_TAGS = {
@@ -27,6 +28,10 @@ export const CACHE_TAGS = {
 
 export function getTenantTag(tenantId: string, tag: keyof typeof CACHE_TAGS) {
   return `tenant:${tenantId}-${CACHE_TAGS[tag]}` as const;
+}
+
+export function getBranchTag(branchId: string, tag: keyof typeof CACHE_TAGS) {
+  return `branch:${branchId}-${CACHE_TAGS[tag]}` as const;
 }
 
 export function getUserTag(userId: string, tag: keyof typeof CACHE_TAGS) {
@@ -67,7 +72,7 @@ export function revalidateDbCache({
   }
 
   if (branchId != null) {
-    revalidateTag(getIdTag(branchId, tag));
+    revalidateTag(getBranchTag(branchId, tag));
   }
 
   if (userId != null) {

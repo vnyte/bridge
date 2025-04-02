@@ -29,7 +29,7 @@ export const LicenseStep = () => {
             name="learningLicense.class"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Applying for</FormLabel>
+                <FormLabel required>Applying for</FormLabel>
                 <MultiSelect
                   options={licenseClassOptions}
                   onValueChange={field.onChange}
@@ -53,7 +53,7 @@ export const LicenseStep = () => {
             name="learningLicense.licenseNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>License Number*</FormLabel>
+                <FormLabel>License Number</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="License number"
@@ -151,7 +151,7 @@ export const LicenseStep = () => {
             name="drivingLicense.licenseNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>License Number*</FormLabel>
+                <FormLabel>License Number</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="License number"

@@ -27,7 +27,7 @@ import { useEffect } from 'react';
 import { Info } from 'lucide-react';
 
 export const PersonalInfoStep = () => {
-  const { control, setValue } = useFormContext<AdmissionFormValues>();
+  const { control, setValue, clearErrors } = useFormContext<AdmissionFormValues>();
 
   // Watch for changes in the checkbox and address fields
   const isSameAddress = useWatch({
@@ -62,8 +62,24 @@ export const PersonalInfoStep = () => {
       setValue('personalInfo.permanentCity', currentCity);
       setValue('personalInfo.permanentState', currentState);
       setValue('personalInfo.permanentPincode', currentPincode);
+
+      // Clear any validation errors from permanent address fields
+      clearErrors([
+        'personalInfo.permanentAddress',
+        'personalInfo.permanentCity',
+        'personalInfo.permanentState',
+        'personalInfo.permanentPincode',
+      ]);
     }
-  }, [isSameAddress, currentAddress, currentCity, currentState, currentPincode, setValue]);
+  }, [
+    isSameAddress,
+    currentAddress,
+    currentCity,
+    currentState,
+    currentPincode,
+    setValue,
+    clearErrors,
+  ]);
 
   return (
     <div className="space-y-10">
