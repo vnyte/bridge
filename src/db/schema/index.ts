@@ -26,3 +26,9 @@ export * from './enums';
 
 export * from './client-documents/columns';
 export * from './client-documents/relations';
+
+export * from './payment/columns';
+export * from './payment/relations';
+
+export * from './client-transactions/columns';
+export * from './client-transactions/relations';

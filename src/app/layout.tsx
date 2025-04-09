@@ -24,7 +24,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${manrope.variable} antialiased`}>
-          <Toaster />
+          <Toaster closeButton duration={3000} />
           <NuqsAdapter>{children}</NuqsAdapter>
         </body>
       </html>

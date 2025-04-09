@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { ClientTable } from '@/db/schema';
+import { ClientTable, PaymentTable, PlanTable } from '@/db/schema';
 import { CACHE_TAGS, revalidateDbCache } from '@/lib/cache';
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
@@ -97,6 +97,66 @@ export const upsertDrivingLicenseInDB = async (data: typeof DrivingLicenseTable.
   return {
     license,
     isExistingLicense,
+  };
+};
+
+export const upsertPlanInDB = async (data: typeof PlanTable.$inferInsert) => {
+  // Create a variable to track if this was an update operation
+  let isExistingPlan = false;
+
+  const [plan] = await db
+    .insert(PlanTable)
+    .values(data)
+    .onConflictDoUpdate({
+      target: PlanTable.clientId,
+      set: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  // Check if this was an update by comparing createdAt and updatedAt
+  // If they're different by more than a few seconds, it was an update
+  if (plan.createdAt && plan.updatedAt) {
+    const timeDiff = Math.abs(plan.updatedAt.getTime() - plan.createdAt.getTime());
+    isExistingPlan = timeDiff > 1000; // More than 1 second difference
+  }
+
+  return {
+    plan,
+    isExistingPlan,
+    planId: plan.id,
+  };
+};
+
+export const upsertPaymentInDB = async (data: typeof PaymentTable.$inferInsert) => {
+  // Create a variable to track if this was an update operation
+  let isExistingPayment = false;
+
+  const [payment] = await db
+    .insert(PaymentTable)
+    .values(data)
+    .onConflictDoUpdate({
+      target: PaymentTable.planId,
+      set: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  // Check if this was an update by comparing createdAt and updatedAt
+  // If they're different by more than a few seconds, it was an update
+  if (payment.createdAt && payment.updatedAt) {
+    const timeDiff = Math.abs(payment.updatedAt.getTime() - payment.createdAt.getTime());
+    isExistingPayment = timeDiff > 1000; // More than 1 second difference
+  }
+
+  return {
+    payment,
+    isExistingPayment,
+    paymentId: payment.id,
   };
 };
 

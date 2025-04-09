@@ -12,6 +12,7 @@ import {
   PlanValues,
   LearningLicenseValues,
   DrivingLicenseValues,
+  PaymentValues,
 } from '../../types';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -21,12 +22,20 @@ import { PlanStep } from './steps/plan';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useStepNavigation } from '../progress-bar/progress-bar';
 import { ActionReturnType } from '@/types/actions';
-import { createClient, createLearningLicense, createDrivingLicense } from '../../server/action';
+import {
+  createClient,
+  createLearningLicense,
+  createDrivingLicense,
+  createPlan,
+  createPayment,
+} from '../../server/action';
+import { PaymentContainer } from './steps/payment';
 
 export const MultistepForm = () => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [clientId, setClientId] = React.useState<string | undefined>(undefined);
+  const [planId, setPlanId] = React.useState<string | undefined>(undefined);
 
   const methods = useForm<AdmissionFormValues>({
     resolver: zodResolver(admissionFormSchema),
@@ -41,6 +50,9 @@ export const MultistepForm = () => {
         vehicleId: '',
         numberOfSessions: 21,
         sessionDurationInMinutes: 30,
+      },
+      payment: {
+        discount: 0,
       },
     },
     mode: 'onChange',
@@ -144,9 +156,45 @@ export const MultistepForm = () => {
   };
 
   const handlePlanStep = async (data: PlanValues): ActionReturnType => {
-    console.log(data);
-    // Placeholder for plan step action
-    return Promise.resolve({ error: false, message: 'Plan information saved' });
+    if (!clientId) {
+      return Promise.resolve({
+        error: true,
+        message: 'Client ID not found. Please complete the personal information step first.',
+      });
+    }
+
+    const result = await createPlan({
+      ...data,
+      clientId,
+    });
+
+    setPlanId(result.planId);
+
+    return result;
+  };
+
+  const handlePaymentStep = async (data: PaymentValues): ActionReturnType => {
+    if (!clientId) {
+      return Promise.resolve({
+        error: true,
+        message: 'Client ID not found. Please complete the personal information step first.',
+      });
+    }
+
+    if (!planId) {
+      return Promise.resolve({
+        error: true,
+        message: 'Plan ID not found. Please complete the plan step first.',
+      });
+    }
+
+    const result = await createPayment({
+      ...data,
+      clientId,
+      planId,
+    });
+
+    return result;
   };
 
   // Map step keys to components and their corresponding actions
@@ -172,6 +220,11 @@ export const MultistepForm = () => {
       onSubmit: (data: unknown) => handlePlanStep(data as PlanValues),
       getData: () => getValues('plan'),
     },
+    payment: {
+      component: <PaymentContainer />,
+      onSubmit: (data: unknown) => handlePaymentStep(data as PaymentValues),
+      getData: () => getValues('payment'),
+    },
   } as const;
 
   // Derive the step key type from the stepComponents object
@@ -186,6 +239,8 @@ export const MultistepForm = () => {
         return [...generateFieldPaths('learningLicense'), ...generateFieldPaths('drivingLicense')];
       case 'plan':
         return generateFieldPaths('plan');
+      case 'payment':
+        return generateFieldPaths('payment');
       default:
         return [];
     }

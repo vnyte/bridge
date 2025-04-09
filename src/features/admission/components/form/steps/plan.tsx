@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { useVehicles } from '@/hooks/use-vehicles';
+import { useVehicles } from '@/hooks/vehicles';
 import { TypographyH5 } from '@/components/ui/typography';
 
 export const PlanStep = () => {

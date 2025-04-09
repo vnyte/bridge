@@ -7,7 +7,7 @@ export const PlanTable = pgTable('plans', {
   sessionDurationInMinutes: integer('session_duration_in_minutes').notNull(),
   joiningDate: date('joining_date', { mode: 'date' }).notNull(),
 
-  clientId: uuid('client_id').notNull(),
+  clientId: uuid('client_id').notNull().unique(),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

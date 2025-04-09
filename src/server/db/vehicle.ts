@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { VehicleTable } from '@/db/schema';
-import { dbCache, getBranchTag, CACHE_TAGS } from '@/lib/cache';
+import { dbCache, getBranchTag, CACHE_TAGS, getIdTag } from '@/lib/cache';
 import { auth } from '@clerk/nextjs/server';
 import { eq, ilike, and } from 'drizzle-orm';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
@@ -34,4 +34,26 @@ export const getVehicles = async (name?: string) => {
   });
 
   return await cacheFn(branchId, name);
+};
+
+const _getVehicle = async (id: string) => {
+  const vehicle = await db.query.VehicleTable.findFirst({
+    where: eq(VehicleTable.id, id),
+  });
+
+  return vehicle;
+};
+
+export const getVehicle = async (id: string) => {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return null;
+  }
+
+  const cacheFn = dbCache(_getVehicle, {
+    tags: [getIdTag(id, CACHE_TAGS.vehicles)],
+  });
+
+  return await cacheFn(id);
 };

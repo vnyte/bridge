@@ -10,6 +10,7 @@ import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
 import { PlanTable } from '@/db/schema/plan/columns';
 import { LicenseClassEnum } from '@/db/schema/enums';
+import { PaymentModeEnum, PaymentTable, PaymentTypeEnum } from '@/db/schema';
 
 // Create schemas directly from database tables
 export const personalInfoSchema = createInsertSchema(ClientTable, {
@@ -78,7 +79,37 @@ export const planSchema = createInsertSchema(PlanTable, {
   numberOfSessions: z.number().min(1, 'Number of sessions is required'),
   sessionDurationInMinutes: z.number().min(1, 'Session duration is required'),
   joiningDate: z.date().min(new Date('1900-01-01'), 'Invalid joining date'),
-}).omit({ clientId: true, createdAt: true, updatedAt: true });
+}).omit({ createdAt: true, updatedAt: true });
+
+export const paymentSchema = createInsertSchema(PaymentTable, {
+  discount: z.number().default(0),
+  paymentType: z
+    .enum(PaymentTypeEnum.enumValues, { required_error: 'Payment type is required' })
+    .default('FULL_PAYMENT'),
+  fullPaymentDate: z.string().nullable().optional(),
+  fullPaymentMode: z
+    .enum(PaymentModeEnum.enumValues, { required_error: 'Payment mode is required' })
+    .default('PAYMENT_LINK'),
+  firstInstallmentAmount: z
+    .number()
+    .min(0, 'First installment amount cannot be negative')
+    .default(0)
+    .nullable(),
+  firstInstallmentDate: z.string().nullable().optional(),
+  firstPaymentMode: z
+    .enum(PaymentModeEnum.enumValues, { required_error: 'Payment mode is required' })
+    .default('PAYMENT_LINK'),
+  secondInstallmentAmount: z
+    .number()
+    .min(0, 'Second installment amount cannot be negative')
+    .default(0)
+    .nullable(),
+  secondInstallmentDate: z.string().nullable().optional(),
+  secondPaymentMode: z
+    .enum(PaymentModeEnum.enumValues, { required_error: 'Payment mode is required' })
+    .default('PAYMENT_LINK'),
+  paymentDueDate: z.string().nullable().optional(),
+}).omit({ createdAt: true, updatedAt: true });
 
 // Combined schema for the entire form
 export const admissionFormSchema = z.object({
@@ -86,6 +117,7 @@ export const admissionFormSchema = z.object({
   learningLicense: learningLicenseSchema.optional(),
   drivingLicense: drivingLicenseSchema.optional(),
   plan: planSchema,
+  payment: paymentSchema,
 });
 
 export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
@@ -93,4 +125,5 @@ export type LearningLicenseValues = z.infer<typeof learningLicenseSchema>;
 export type DrivingLicenseValues = z.infer<typeof drivingLicenseSchema>;
 export type LicenseStepValues = LearningLicenseValues | DrivingLicenseValues;
 export type PlanValues = z.infer<typeof planSchema>;
+export type PaymentValues = z.infer<typeof paymentSchema>;
 export type AdmissionFormValues = z.infer<typeof admissionFormSchema>;
