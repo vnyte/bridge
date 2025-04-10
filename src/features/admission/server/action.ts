@@ -182,15 +182,24 @@ export const createPlan = async (
   }
 
   try {
+    // Extract time from the joiningDate and format it as a string
+    const joiningDateTime = data.joiningDate;
+    const hours = joiningDateTime.getHours().toString().padStart(2, '0');
+    const minutes = joiningDateTime.getMinutes().toString().padStart(2, '0');
+    const timeString = `${hours}:${minutes}`;
+
     // Validate the plan data
-    const parseResult = planSchema.safeParse(data);
+    const parseResult = planSchema.safeParse({ ...data, joiningTime: timeString });
 
     if (!parseResult.success) {
       return { error: true, message: 'Invalid plan data' };
     }
 
-    // Create or update the plan
-    const { isExistingPlan, planId } = await upsertPlanInDB(parseResult.data);
+    // Create or update the plan with separated date and time
+    const { isExistingPlan, planId } = await upsertPlanInDB({
+      ...parseResult.data,
+      joiningTime: timeString,
+    });
 
     const action = isExistingPlan ? 'updated' : 'created';
     return {

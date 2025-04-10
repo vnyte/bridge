@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { useVehicles } from '@/hooks/vehicles';
 import { TypographyH5 } from '@/components/ui/typography';
 
@@ -111,14 +111,13 @@ export const PlanStep = () => {
             name="plan.joiningDate"
             render={() => (
               <FormItem>
-                <FormLabel required>Joining Date</FormLabel>
+                <FormLabel required>Joining Date & Time</FormLabel>
                 <FormControl>
-                  <DatePicker
+                  <DateTimePicker
                     name="plan.joiningDate"
                     control={control}
-                    placeholderText="Select joining date"
-                    minDate={new Date(new Date().setHours(0, 0, 0, 0))}
-                    maxDate={new Date(new Date().setFullYear(new Date().getFullYear() + 1))}
+                    placeholderText="Select joining date and time"
+                    maxDate={new Date(2100, 0, 1)}
                   />
                 </FormControl>
                 <FormMessage />
