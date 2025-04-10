@@ -276,7 +276,9 @@ export const MultistepForm = () => {
         }
 
         // Step 4: On success, show feedback and handle navigation
-        toast.success(result.message || 'Information saved successfully');
+        toast.success(result.message || 'Information saved successfully', {
+          position: 'top-right',
+        });
 
         // If it's the last step, we're done with the form
         if (isLastStep) {

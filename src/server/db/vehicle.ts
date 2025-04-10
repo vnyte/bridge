@@ -57,3 +57,5 @@ export const getVehicle = async (id: string) => {
 
   return await cacheFn(id);
 };
+
+export type Vehicle = Awaited<ReturnType<typeof getVehicle>>;

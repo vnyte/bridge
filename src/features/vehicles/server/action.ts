@@ -2,12 +2,15 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
-import { addVehicle as addVehicleInDB } from './db';
+import { addVehicle as addVehicleInDB, updateVehicle as updateVehicleInDB } from './db';
 import { ActionReturnType } from '@/types/actions';
 import { vehicleFormSchema } from '../schemas/vehicles';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 
-export async function addVehicle(unsafeData: z.infer<typeof vehicleFormSchema>): ActionReturnType {
+export async function addVehicle(
+  unsafeData: z.infer<typeof vehicleFormSchema>,
+  id?: string
+): ActionReturnType {
   try {
     const { userId, orgId } = await auth();
 
@@ -26,6 +29,15 @@ export async function addVehicle(unsafeData: z.infer<typeof vehicleFormSchema>):
 
     if (!branchId) {
       return { error: true, message: 'Branch not found' };
+    }
+
+    if (id) {
+      await updateVehicleInDB(id, {
+        ...data,
+        branchId,
+        createdBy: userId,
+      });
+      return { error: false, message: 'Vehicle updated successfully' };
     }
 
     await addVehicleInDB({

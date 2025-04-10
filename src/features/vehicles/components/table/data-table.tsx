@@ -1,6 +1,6 @@
 'use client';
 
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { ColumnDef, flexRender, getCoreRowModel, Row, useReactTable } from '@tanstack/react-table';
 
 import {
   Table,
@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useRouter } from 'next/navigation';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -17,11 +18,21 @@ interface DataTableProps<TData, TValue> {
 }
 
 export function VehicleDataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  const handleRowClick = (row: Row<TData>) => {
+    // Access the original data from the row
+    const original = row.original as { id?: string };
+    if (original && original.id) {
+      router.push(`/vehicles/${original.id}`);
+    }
+  };
 
   return (
     <div className="rounded-md border">
@@ -44,7 +55,12 @@ export function VehicleDataTable<TData, TValue>({ columns, data }: DataTableProp
         <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && 'selected'}
+                onClick={() => handleRowClick(row)}
+                className="cursor-pointer hover:bg-muted/50"
+              >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

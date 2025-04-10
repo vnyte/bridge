@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const vehicleFormSchema = z.object({
-  name: z.string().min(1).min(2),
-  number: z.string().min(1).min(2),
-  pucNumber: z.string().min(1).min(2).optional(),
-  insuranceNumber: z.string().min(1).min(2).optional(),
-  registrationExpiry: z.string().min(1).min(2).optional(),
+  name: z.string(),
+  number: z.string(),
+  pucExpiry: z.string().nullable().optional(),
+  insuranceExpiry: z.string().nullable().optional(),
+  registrationExpiry: z.string().nullable().optional(),
   rent: z.number(),
 });

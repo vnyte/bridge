@@ -1,10 +1,11 @@
 'use client';
 
-import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
+import { z } from 'zod';
+import { useTransition } from 'react';
+import { toast } from 'sonner';
+
 import {
   Form,
   FormControl,
@@ -14,35 +15,59 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { TypographyP } from '@/components/ui/typography';
-import { useTransition } from 'react';
-import { addVehicle } from '../server/action';
-import { redirect } from 'next/navigation';
-import { vehicleFormSchema } from '../schemas/vehicles';
 
-export function VehicleForm() {
+import { addVehicle } from '../server/action';
+import { vehicleFormSchema } from '../schemas/vehicles';
+import { Vehicle } from '@/server/db/vehicle';
+import { DatePicker } from '@/components/ui/date-picker';
+import { formatDateToYYYYMMDD, parseYYYYMMDDToDate } from '@/lib/utils/date';
+import { useRouter } from 'next/navigation';
+
+export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
   const form = useForm<z.infer<typeof vehicleFormSchema>>({
     resolver: zodResolver(vehicleFormSchema),
+    defaultValues: {
+      name: vehicle?.name || '',
+      number: vehicle?.number || '',
+      pucExpiry: vehicle?.pucExpiry,
+      insuranceExpiry: vehicle?.insuranceExpiry,
+      registrationExpiry: vehicle?.registrationExpiry,
+      rent: vehicle?.rent || 0,
+    },
   });
 
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   function onSubmit(values: z.infer<typeof vehicleFormSchema>) {
     startTransition(async () => {
-      const { error, message } = await addVehicle(values);
-      if (!error) {
-        toast.success('Vehicle added successfully');
-        form.reset();
-        redirect('/vehicles');
-      } else toast.error(message);
+      try {
+        const result = await addVehicle(values, vehicle?.id);
+
+        if (result && 'error' in result && result.error) {
+          toast.error(result.message || 'Failed to add vehicle');
+        } else {
+          toast.success(result.message);
+          if (!vehicle?.id) {
+            form.reset();
+            router.push('/vehicles');
+          }
+        }
+      } catch (error) {
+        console.log(error);
+        toast.error('Something went wrong');
+      }
     });
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-10">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="grid grid-cols-12 w-full">
-          <TypographyP className="col-span-3 font-medium">Vehicle Details</TypographyP>
+          <TypographyP className="col-span-3 font-medium">Basic Details</TypographyP>
+
           <div className="col-span-9 gap-6 flex">
             <FormField
               control={form.control}
@@ -75,16 +100,23 @@ export function VehicleForm() {
         </div>
 
         <div className="grid grid-cols-12 w-full">
-          <TypographyP className="col-span-3 font-medium">Documents</TypographyP>
+          <TypographyP className="col-span-3 font-medium">Expiry Details</TypographyP>
+
           <div className="col-span-9 gap-6 flex">
             <FormField
               control={form.control}
-              name="pucNumber"
+              name="pucExpiry"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>PUC Expiry</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter here" type="text" {...field} />
+                    <DatePicker
+                      selected={parseYYYYMMDDToDate(field.value)}
+                      onChange={(date) => field.onChange(formatDateToYYYYMMDD(date))}
+                      placeholderText="Select expiry date"
+                      maxDate={new Date(2100, 0, 1)}
+                      disabled={undefined}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -93,12 +125,18 @@ export function VehicleForm() {
 
             <FormField
               control={form.control}
-              name="insuranceNumber"
+              name="insuranceExpiry"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Insurance Expiry</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter here" type="text" {...field} />
+                    <DatePicker
+                      selected={parseYYYYMMDDToDate(field.value)}
+                      onChange={(date) => field.onChange(formatDateToYYYYMMDD(date))}
+                      placeholderText="Select expiry date"
+                      maxDate={new Date(2100, 0, 1)}
+                      disabled={undefined}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -112,7 +150,13 @@ export function VehicleForm() {
                 <FormItem>
                   <FormLabel>Registration Expiry</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter here" type="text" {...field} />
+                    <DatePicker
+                      selected={parseYYYYMMDDToDate(field.value)}
+                      onChange={(date) => field.onChange(formatDateToYYYYMMDD(date))}
+                      placeholderText="Select expiry date"
+                      maxDate={new Date(2100, 0, 1)}
+                      disabled={undefined}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,8 +188,9 @@ export function VehicleForm() {
             />
           </div>
         </div>
-        <Button type="submit" isLoading={isPending}>
-          Submit
+
+        <Button type="submit" disabled={isPending}>
+          {isPending ? 'Submitting...' : 'Submit'}
         </Button>
       </form>
     </Form>
