@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TypographyP } from '@/components/ui/typography';
 
-import { addVehicle } from '../server/action';
+import { addVehicle, updateVehicle } from '../server/action';
 import { vehicleFormSchema } from '../schemas/vehicles';
 import { Vehicle } from '@/server/db/vehicle';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -44,10 +44,18 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
   function onSubmit(values: z.infer<typeof vehicleFormSchema>) {
     startTransition(async () => {
       try {
-        const result = await addVehicle(values, vehicle?.id);
+        let result;
 
-        if (result && 'error' in result && result.error) {
-          toast.error(result.message || 'Failed to add vehicle');
+        if (vehicle?.id) {
+          // Update existing vehicle
+          result = await updateVehicle(vehicle.id, values);
+        } else {
+          // Create new vehicle
+          result = await addVehicle(values);
+        }
+
+        if (result.error) {
+          toast.error(result.message || 'Failed to process vehicle data');
         } else {
           toast.success(result.message);
           if (!vehicle?.id) {
@@ -190,7 +198,7 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
         </div>
 
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Submitting...' : 'Submit'}
+          {isPending ? 'Submitting...' : vehicle?.id ? 'Update' : 'Submit'}
         </Button>
       </form>
     </Form>
