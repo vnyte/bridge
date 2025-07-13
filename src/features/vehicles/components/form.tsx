@@ -119,7 +119,7 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
                   <FormLabel>PUC Expiry</FormLabel>
                   <FormControl>
                     <DatePicker
-                      selected={parseYYYYMMDDToDate(field.value)}
+                      selected={parseYYYYMMDDToDate(field.value || null)}
                       onChange={(date) => field.onChange(formatDateToYYYYMMDD(date))}
                       placeholderText="Select expiry date"
                       maxDate={new Date(2100, 0, 1)}
@@ -139,7 +139,7 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
                   <FormLabel>Insurance Expiry</FormLabel>
                   <FormControl>
                     <DatePicker
-                      selected={parseYYYYMMDDToDate(field.value)}
+                      selected={parseYYYYMMDDToDate(field.value || null)}
                       onChange={(date) => field.onChange(formatDateToYYYYMMDD(date))}
                       placeholderText="Select expiry date"
                       maxDate={new Date(2100, 0, 1)}
@@ -159,7 +159,7 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
                   <FormLabel>Registration Expiry</FormLabel>
                   <FormControl>
                     <DatePicker
-                      selected={parseYYYYMMDDToDate(field.value)}
+                      selected={parseYYYYMMDDToDate(field.value || null)}
                       onChange={(date) => field.onChange(formatDateToYYYYMMDD(date))}
                       placeholderText="Select expiry date"
                       maxDate={new Date(2100, 0, 1)}

@@ -9,5 +9,5 @@ export type Permission = (typeof ROLE_PERMISSIONS)[keyof typeof ROLE_PERMISSIONS
 
 // Helper function to check if a role has a specific permission
 export function hasPermission(role: Role, permission: Permission) {
-  return role === 'admin' || ROLE_PERMISSIONS[role].includes(permission as any);
+  return role === 'admin' || (ROLE_PERMISSIONS[role] as readonly string[]).includes(permission);
 }

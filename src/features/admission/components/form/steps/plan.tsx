@@ -30,7 +30,7 @@ export const PlanStep = () => {
             name="plan.vehicleId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Vehicle*</FormLabel>
+                <FormLabel required>Vehicle</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>

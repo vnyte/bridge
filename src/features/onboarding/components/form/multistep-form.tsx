@@ -11,6 +11,8 @@ import { onboardingFormSchema, OnboardingFormValues } from '../types';
 import { createTenant } from '../../server/action';
 import { toast } from 'sonner';
 import { useAuth } from '@clerk/nextjs';
+import { CompletionScreen } from '../completion-screen';
+import { SuccessScreen } from '../success-screen';
 
 // Define the step configuration with components
 export type StepKey = 'schoolName' | 'branches';
@@ -57,8 +59,14 @@ export const MultistepForm = () => {
   const [isPending, startTransition] = useTransition();
   const { getToken } = useAuth();
 
+  // Completion flow state
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   // Handle form submission
   const onSubmit: SubmitHandler<OnboardingFormValues> = async (data) => {
+    setShowCompletion(true);
+
     startTransition(async () => {
       const response = await createTenant(data);
       await getToken({
@@ -66,12 +74,23 @@ export const MultistepForm = () => {
       });
 
       if (!response?.error) {
-        toast.success('Created successfully');
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1000);
+        // Success handled by completion flow
+      } else {
+        // On error, hide completion and show error
+        setShowCompletion(false);
+        toast.error('Something went wrong. Please try again.');
       }
     });
+  };
+
+  // Handle completion flow
+  const handleCompletionComplete = () => {
+    setShowCompletion(false);
+    setShowSuccess(true);
+  };
+
+  const handleRedirectToDashboard = () => {
+    window.location.href = '/dashboard';
   };
 
   // Handle next step
@@ -91,6 +110,16 @@ export const MultistepForm = () => {
       }
     }
   };
+
+  // Show completion screen
+  if (showCompletion) {
+    return <CompletionScreen onComplete={handleCompletionComplete} />;
+  }
+
+  // Show success screen
+  if (showSuccess) {
+    return <SuccessScreen onRedirect={handleRedirectToDashboard} />;
+  }
 
   // Dynamically render the current step component
   const StepComponent = currentStep.component;
