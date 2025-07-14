@@ -16,6 +16,8 @@ export type Client = {
   state: string;
   createdAt: Date;
   paymentStatus?: 'PENDING' | 'PARTIALLY_PAID' | 'FULLY_PAID' | null;
+  remainingSessions: number;
+  unassignedSessions: number;
 };
 
 const getPaymentStatusBadge = (status?: string | null) => {
@@ -71,8 +73,24 @@ export const columns: ColumnDef<Client>[] = [
     },
   },
   {
+    accessorKey: 'remainingSessions',
+    header: 'Remaining Sessions',
+    cell: ({ row }) => {
+      const remaining = row.original.remainingSessions;
+      return <Badge variant={remaining > 0 ? 'default' : 'secondary'}>{remaining}</Badge>;
+    },
+  },
+  {
+    accessorKey: 'unassignedSessions',
+    header: 'Unassigned Sessions',
+    cell: ({ row }) => {
+      const unassigned = row.original.unassignedSessions;
+      return <Badge variant={unassigned > 0 ? 'destructive' : 'secondary'}>{unassigned}</Badge>;
+    },
+  },
+  {
     accessorKey: 'createdAt',
-    header: 'Joined Date',
+    header: 'Joining Date',
     cell: ({ row }) => {
       return format(new Date(row.original.createdAt), 'MMM dd, yyyy');
     },

@@ -32,3 +32,6 @@ export * from './payment/relations';
 
 export * from './client-transactions/columns';
 export * from './client-transactions/relations';
+
+export * from './sessions/columns';
+export * from './sessions/relations';

@@ -29,9 +29,18 @@ import {
   createPlan,
   createPayment,
 } from '../../server/action';
+import { createSessions } from '@/server/actions/sessions';
+import { generateSessionsFromPlan } from '@/lib/sessions';
 import { PaymentContainer } from './steps/payment';
 
-export const MultistepForm = () => {
+type MultistepFormProps = {
+  branchConfig: {
+    workingDays: number[];
+    operatingHours: { start: string; end: string };
+  };
+};
+
+export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [clientId, setClientId] = React.useState<string | undefined>(undefined);
@@ -108,9 +117,12 @@ export const MultistepForm = () => {
     const hasDrivingLicense = drivingLicense && Object.keys(drivingLicense).length > 0;
 
     try {
+      let learningResult: Awaited<ActionReturnType> | null = null;
+      let drivingResult: Awaited<ActionReturnType> | null = null;
+
       // Handle learning license if present
       if (hasLearningLicense) {
-        const learningResult = await createLearningLicense({
+        learningResult = await createLearningLicense({
           ...learningLicense,
           clientId,
         });
@@ -123,7 +135,7 @@ export const MultistepForm = () => {
 
       // Handle driving license if present
       if (hasDrivingLicense || hasClass) {
-        const drivingResult = await createDrivingLicense({
+        drivingResult = await createDrivingLicense({
           ...drivingLicense,
           class: learningLicense?.class || [],
           clientId,
@@ -133,19 +145,31 @@ export const MultistepForm = () => {
         if (drivingResult.error) {
           return drivingResult;
         }
+      }
 
-        // If both licenses were processed successfully, return a combined success message
+      // Return success message based on what was processed
+      if (learningResult && drivingResult) {
         return {
           error: false,
           message: 'Learning and driving license information saved successfully',
         };
+      } else if (learningResult) {
+        return {
+          error: false,
+          message: 'Learning license information saved successfully',
+        };
+      } else if (drivingResult) {
+        return {
+          error: false,
+          message: 'Driving license information saved successfully',
+        };
       }
 
-      // This should never happen due to our checks above, but TypeScript needs it
-      return Promise.resolve({
-        error: true,
-        message: 'No license data was processed',
-      });
+      // If no licenses were processed, allow progression (licenses are optional)
+      return {
+        error: false,
+        message: 'License step completed',
+      };
     } catch (error) {
       console.error('Error processing license data:', error);
       return Promise.resolve({
@@ -170,7 +194,50 @@ export const MultistepForm = () => {
 
     setPlanId(result.planId);
 
-    return result;
+    try {
+      const planData = getValues('plan');
+      const planDataObj = {
+        joiningDate: planData.joiningDate,
+        joiningTime:
+          planData.joiningDate.getHours().toString().padStart(2, '0') +
+          ':' +
+          planData.joiningDate.getMinutes().toString().padStart(2, '0'),
+        numberOfSessions: planData.numberOfSessions,
+        vehicleId: planData.vehicleId,
+      };
+
+      const clientDataObj = {
+        id: clientId,
+        firstName: getValues('personalInfo').firstName,
+        lastName: getValues('personalInfo').lastName,
+      };
+
+      const sessionsToCreate = generateSessionsFromPlan(planDataObj, clientDataObj, branchConfig);
+
+      // Create sessions in the database
+      const sessionsResult = await createSessions(sessionsToCreate);
+
+      if (sessionsResult.error) {
+        // Payment was created but sessions failed - log warning but don't fail the flow
+        console.error('Sessions creation failed:', sessionsResult.message);
+        return {
+          error: false,
+          message: `Payment created successfully, but some sessions could not be scheduled. Please check the calendar to manually schedule sessions.`,
+        };
+      }
+
+      return {
+        error: false,
+        message: `Payment and ${sessionsToCreate.length} sessions created successfully`,
+      };
+    } catch (error) {
+      console.error('Error creating sessions:', error);
+      return {
+        error: false,
+        message:
+          'Payment created successfully, but sessions could not be scheduled. Please check the calendar to manually schedule sessions.',
+      };
+    }
   };
 
   const handlePaymentStep = async (data: PaymentValues): ActionReturnType => {
@@ -265,30 +332,33 @@ export const MultistepForm = () => {
 
       // Step 2: Execute the step-specific action
       startTransition(async () => {
-        // Get the current step's data and action handler
-        const stepData = stepComponents[currentStepKey].getData();
-        const result = await stepComponents[currentStepKey].onSubmit(stepData);
+        try {
+          // Get the current step's data and action handler
+          const stepData = stepComponents[currentStepKey].getData();
+          const result = await stepComponents[currentStepKey].onSubmit(stepData);
 
-        // Step 3: Handle the result of the step action
-        if (result.error) {
-          toast.error(result.message || 'Failed to save information');
-          return;
+          // Step 3: Handle the result of the step action
+          if (result.error) {
+            toast.error(result.message || 'Failed to save information');
+          } else {
+            // Step 4: On success, show feedback and handle navigation
+            toast.success(result.message || 'Information saved successfully', {
+              position: 'top-right',
+            });
+
+            // If it's the last step, we're done with the form
+            if (isLastStep) {
+              router.refresh();
+              router.push('/dashboard'); // Redirect to dashboard or another appropriate page
+            } else {
+              // Otherwise, proceed to the next step
+              goToNext();
+            }
+          }
+        } catch (error) {
+          console.error('Error in step submission:', error);
+          toast.error('An unexpected error occurred');
         }
-
-        // Step 4: On success, show feedback and handle navigation
-        toast.success(result.message || 'Information saved successfully', {
-          position: 'top-right',
-        });
-
-        // If it's the last step, we're done with the form
-        if (isLastStep) {
-          router.refresh();
-          router.push('/dashboard'); // Redirect to dashboard or another appropriate page
-          return;
-        }
-
-        // Otherwise, proceed to the next step
-        goToNext();
       });
     } catch (error) {
       // Handle any unexpected errors

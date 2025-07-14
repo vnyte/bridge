@@ -1,5 +1,6 @@
 'use server';
 import { z } from 'zod';
+import { DEFAULT_WORKING_DAYS, DEFAULT_OPERATING_HOURS } from '@/lib/constants/business';
 import {
   learningLicenseSchema,
   LearningLicenseValues,
@@ -11,7 +12,11 @@ import {
   paymentSchema,
 } from '../types';
 import { auth } from '@clerk/nextjs/server';
-import { getCurrentOrganizationBranchId } from '@/server/db/branch';
+import {
+  getCurrentOrganizationBranchId,
+  getCurrentOrganizationBranch,
+  getCurrentOrganizationTenantId,
+} from '@/server/db/branch';
 import { ActionReturnType } from '@/types/actions';
 import {
   upsertClientInDB,
@@ -37,15 +42,21 @@ export const createClient = async (
   }
 
   const branchId = await getCurrentOrganizationBranchId();
+  const tenantId = await getCurrentOrganizationTenantId();
 
   if (!branchId) {
     return { error: true, message: 'Branch not found' };
+  }
+
+  if (!tenantId) {
+    return { error: true, message: 'Tenant not found' };
   }
 
   try {
     const { isExistingClient, clientId } = await upsertClientInDB({
       ...unsafeData,
       branchId,
+      tenantId,
     });
 
     return {
@@ -301,5 +312,40 @@ export const createPayment = async (
   } catch (error) {
     console.error('Error processing payment data:', error);
     return { error: true, message: 'Failed to save payment information' };
+  }
+};
+
+export const getBranchConfig = async (): Promise<{
+  error: boolean;
+  message: string;
+  data?: {
+    workingDays: number[];
+    operatingHours: { start: string; end: string };
+  };
+}> => {
+  const { userId, orgId } = await auth();
+
+  if (!userId || !orgId) {
+    return { error: true, message: 'User not authenticated or not in an organization' };
+  }
+
+  try {
+    const branch = await getCurrentOrganizationBranch();
+
+    if (!branch) {
+      return { error: true, message: 'Branch not found' };
+    }
+
+    return {
+      error: false,
+      message: 'Branch configuration retrieved successfully',
+      data: {
+        workingDays: branch.workingDays || DEFAULT_WORKING_DAYS,
+        operatingHours: branch.operatingHours || DEFAULT_OPERATING_HOURS,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching branch config:', error);
+    return { error: true, message: 'Failed to fetch branch configuration' };
   }
 };

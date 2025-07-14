@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { format } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useController, Control, FieldPath, FieldValues } from 'react-hook-form';
@@ -89,12 +90,11 @@ export function DatePicker<TFieldValues extends FieldValues = FieldValues>({
 function ControlledDatePicker<TFieldValues extends FieldValues>({
   name,
   control,
-  placeholderText,
   disabled,
   className,
   minDate,
   maxDate,
-}: Omit<DatePickerProps<TFieldValues>, 'selected' | 'onChange'> & {
+}: Omit<DatePickerProps<TFieldValues>, 'selected' | 'onChange' | 'placeholderText'> & {
   name: FieldPath<TFieldValues>;
   control: Control<TFieldValues>;
 }) {
@@ -105,6 +105,19 @@ function ControlledDatePicker<TFieldValues extends FieldValues>({
     control,
   });
 
+  const [inputValue, setInputValue] = React.useState(value ? format(value, 'dd/MM/yyyy') : '');
+  const [open, setOpen] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  // Update input value when external value changes
+  React.useEffect(() => {
+    if (value) {
+      setInputValue(format(value, 'dd/MM/yyyy'));
+    } else {
+      setInputValue('');
+    }
+  }, [value]);
+
   // Create a date filter function that combines the provided disabled function with min/max date constraints
   const dateFilter = React.useCallback(
     (date: Date) => {
@@ -114,30 +127,90 @@ function ControlledDatePicker<TFieldValues extends FieldValues>({
     [disabled, minDate, maxDate]
   );
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+
+    // Try to parse the date in DD/MM/YYYY format
+    if (newValue.length === 10) {
+      const parsedDate = parse(newValue, 'dd/MM/yyyy', new Date());
+      if (isValid(parsedDate) && !dateFilter(parsedDate)) {
+        onChange(parsedDate);
+      }
+    } else if (newValue === '') {
+      onChange(null);
+    }
+  };
+
+  const handleInputFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleInputBlur = () => {
+    setIsFocused(false);
+    // If input is invalid, reset to current value or empty
+    if (inputValue && inputValue.length === 10) {
+      const parsedDate = parse(inputValue, 'dd/MM/yyyy', new Date());
+      if (!isValid(parsedDate) || dateFilter(parsedDate)) {
+        setInputValue(value ? format(value, 'dd/MM/yyyy') : '');
+      }
+    }
+  };
+
+  const handleButtonFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleButtonBlur = () => {
+    setIsFocused(false);
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    onChange(date || null);
+    setOpen(false);
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            'w-full pl-3 text-left font-normal',
-            !value && 'text-muted-foreground',
-            className
-          )}
-        >
-          {value ? format(value, 'PPP') : <span>{placeholderText}</span>}
-          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <CalendarComponent
-          mode="single"
-          selected={value as Date | undefined}
-          onSelect={onChange as (date: Date | undefined) => void}
-          disabled={dateFilter}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
+    <div
+      className={cn(
+        'flex w-full relative rounded-md',
+        isFocused && 'ring-2 ring-ring ring-offset-2'
+      )}
+    >
+      <Input
+        value={inputValue}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        placeholder="DD/MM/YYYY"
+        className={cn(
+          'rounded-r-none border-r-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:ring-offset-0 focus:outline-none',
+          className
+        )}
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="rounded-l-none px-3 border-l-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            type="button"
+            onFocus={handleButtonFocus}
+            onBlur={handleButtonBlur}
+          >
+            <CalendarIcon className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <CalendarComponent
+            mode="single"
+            selected={value as Date | undefined}
+            onSelect={handleCalendarSelect}
+            disabled={dateFilter}
+            defaultMonth={value as Date | undefined}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }

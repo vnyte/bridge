@@ -1,8 +1,7 @@
 import { db } from '@/db';
-import { ClientTable, PaymentTable } from '@/db/schema';
-import { dbCache, getBranchTag, CACHE_TAGS } from '@/lib/cache';
+import { ClientTable, PaymentTable, SessionTable } from '@/db/schema';
 import { auth } from '@clerk/nextjs/server';
-import { eq, ilike, and, desc, or } from 'drizzle-orm';
+import { eq, ilike, and, desc, or, count } from 'drizzle-orm';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 
 const _getClients = async (branchId: string, name?: string, paymentStatus?: string) => {
@@ -10,15 +9,12 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
 
   if (name) {
     conditions.push(
-      or(
-        ilike(ClientTable.firstName, `%${name}%`),
-        ilike(ClientTable.lastName, `%${name}%`),
-        ilike(ClientTable.phoneNumber, `%${name}%`)
-      )!
+      or(ilike(ClientTable.firstName, `%${name}%`), ilike(ClientTable.lastName, `%${name}%`))!
     );
   }
 
-  const query = db
+  // First, get the basic client information
+  const baseQuery = db
     .select({
       id: ClientTable.id,
       firstName: ClientTable.firstName,
@@ -37,17 +33,44 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
     .where(and(...conditions))
     .orderBy(desc(ClientTable.createdAt));
 
-  const clients = await query;
+  const clients = await baseQuery;
+
+  // Get session counts for each client
+  const clientsWithSessions = await Promise.all(
+    clients.map(async (client) => {
+      // Count remaining sessions (scheduled or rescheduled)
+      const remainingSessions = await db
+        .select({ count: count() })
+        .from(SessionTable)
+        .where(
+          and(
+            eq(SessionTable.clientId, client.id),
+            or(eq(SessionTable.status, 'SCHEDULED'), eq(SessionTable.status, 'RESCHEDULED'))
+          )
+        );
+
+      const unassignedSessions = await db
+        .select({ count: count() })
+        .from(SessionTable)
+        .where(and(eq(SessionTable.clientId, client.id), eq(SessionTable.status, 'CANCELLED')));
+
+      return {
+        ...client,
+        remainingSessions: remainingSessions[0]?.count || 0,
+        unassignedSessions: unassignedSessions[0]?.count || 0,
+      };
+    })
+  );
 
   if (paymentStatus && paymentStatus !== 'ALL') {
-    return clients.filter(
+    return clientsWithSessions.filter(
       (client) =>
         client.paymentStatus === paymentStatus ||
         (paymentStatus === 'NO_PAYMENT' && !client.paymentStatus)
     );
   }
 
-  return clients;
+  return clientsWithSessions;
 };
 
 export const getClients = async (name?: string, paymentStatus?: string) => {
@@ -58,11 +81,7 @@ export const getClients = async (name?: string, paymentStatus?: string) => {
     return [];
   }
 
-  const cacheFn = dbCache(_getClients, {
-    tags: [getBranchTag(branchId, CACHE_TAGS.clients)],
-  });
-
-  return await cacheFn(branchId, name, paymentStatus);
+  return await _getClients(branchId, name, paymentStatus);
 };
 
 const _getClient = async (id: string) => {
@@ -90,11 +109,48 @@ export const getClient = async (id: string) => {
     return null;
   }
 
-  const cacheFn = dbCache(_getClient, {
-    tags: [getBranchTag(id, CACHE_TAGS.clients)],
-  });
+  return await _getClient(id);
+};
 
-  return await cacheFn(id);
+const _getClientsWithUnassignedSessions = async (branchId: string) => {
+  // Get clients who have cancelled sessions (unassigned sessions)
+  const clients = await db
+    .select({
+      id: ClientTable.id,
+      firstName: ClientTable.firstName,
+      middleName: ClientTable.middleName,
+      lastName: ClientTable.lastName,
+      phoneNumber: ClientTable.phoneNumber,
+    })
+    .from(ClientTable)
+    .innerJoin(SessionTable, eq(ClientTable.id, SessionTable.clientId))
+    .where(and(eq(ClientTable.branchId, branchId), eq(SessionTable.status, 'CANCELLED')))
+    .groupBy(
+      ClientTable.id,
+      ClientTable.firstName,
+      ClientTable.middleName,
+      ClientTable.lastName,
+      ClientTable.phoneNumber
+    );
+
+  return clients.map((client) => ({
+    ...client,
+    name: `${client.firstName} ${client.middleName ? client.middleName + ' ' : ''}${client.lastName}`,
+  }));
+};
+
+export const getClientsWithUnassignedSessions = async () => {
+  const { userId } = await auth();
+  const branchId = await getCurrentOrganizationBranchId();
+
+  if (!userId || !branchId) {
+    return [];
+  }
+
+  return await _getClientsWithUnassignedSessions(branchId);
 };
 
 export type Client = Awaited<ReturnType<typeof getClients>>[0];
+export type ClientWithUnassignedSessions = Awaited<
+  ReturnType<typeof getClientsWithUnassignedSessions>
+>[0];

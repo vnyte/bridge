@@ -109,13 +109,13 @@ export const PlanStep = () => {
           <FormField
             control={control}
             name="plan.joiningDate"
-            render={() => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel required>Joining Date & Time</FormLabel>
                 <FormControl>
                   <DateTimePicker
-                    name="plan.joiningDate"
-                    control={control}
+                    selected={field.value}
+                    onChange={field.onChange}
                     placeholderText="Select joining date and time"
                     maxDate={new Date(2100, 0, 1)}
                   />

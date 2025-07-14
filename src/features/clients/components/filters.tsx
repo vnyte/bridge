@@ -61,7 +61,7 @@ export const ClientFilters = () => {
         <Input
           value={name || ''}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Search by name or phone..."
+          placeholder="Search by name"
           className="w-96"
         />
 

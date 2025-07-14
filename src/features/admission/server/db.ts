@@ -1,6 +1,5 @@
 import { db } from '@/db';
 import { ClientTable, PaymentTable, PlanTable } from '@/db/schema';
-import { CACHE_TAGS, revalidateDbCache } from '@/lib/cache';
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
 import { eq } from 'drizzle-orm';
@@ -9,12 +8,12 @@ export const upsertClientInDB = async (data: typeof ClientTable.$inferInsert) =>
   // Create a variable to track if this was an update operation
   let isExistingClient = false;
 
-  // Use onConflictDoUpdate to handle the case where a client with the same phone number already exists
+  // Use onConflictDoUpdate to handle the case where a client with the same phone number and tenant already exists
   const [client] = await db
     .insert(ClientTable)
     .values(data)
     .onConflictDoUpdate({
-      target: ClientTable.phoneNumber,
+      target: [ClientTable.phoneNumber, ClientTable.tenantId],
       set: {
         ...data,
         updatedAt: new Date(),
@@ -28,11 +27,6 @@ export const upsertClientInDB = async (data: typeof ClientTable.$inferInsert) =>
     const timeDiff = Math.abs(client.updatedAt.getTime() - client.createdAt.getTime());
     isExistingClient = timeDiff > 1000; // More than 1 second difference
   }
-
-  revalidateDbCache({
-    tag: CACHE_TAGS.clients,
-    id: data.branchId,
-  });
 
   return {
     isExistingClient,

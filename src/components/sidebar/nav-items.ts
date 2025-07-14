@@ -5,4 +5,5 @@ export const navItems = [
   { label: 'Sessions Availability', href: '/calendar' },
   { label: 'Vehicles', href: '/vehicles' },
   { label: 'Staff', href: '/staff' },
+  { label: 'Settings', href: '/settings' },
 ] as const;

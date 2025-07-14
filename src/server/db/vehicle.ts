@@ -1,6 +1,5 @@
 import { db } from '@/db';
 import { VehicleTable } from '@/db/schema';
-import { dbCache, getBranchTag, CACHE_TAGS, getIdTag } from '@/lib/cache';
 import { auth } from '@clerk/nextjs/server';
 import { eq, ilike, and } from 'drizzle-orm';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
@@ -29,11 +28,7 @@ export const getVehicles = async (name?: string) => {
     return [];
   }
 
-  const cacheFn = dbCache(_getVehicles, {
-    tags: [getBranchTag(branchId, CACHE_TAGS.vehicles)],
-  });
-
-  return await cacheFn(branchId, name);
+  return await _getVehicles(branchId, name);
 };
 
 const _getVehicle = async (id: string) => {
@@ -47,15 +42,11 @@ const _getVehicle = async (id: string) => {
 export const getVehicle = async (id: string) => {
   const { userId } = await auth();
 
-  if (!userId) {
+  if (!userId || !id || id.trim() === '') {
     return null;
   }
 
-  const cacheFn = dbCache(_getVehicle, {
-    tags: [getIdTag(id, CACHE_TAGS.vehicles)],
-  });
-
-  return await cacheFn(id);
+  return await _getVehicle(id);
 };
 
 export type Vehicle = Awaited<ReturnType<typeof getVehicle>>;
