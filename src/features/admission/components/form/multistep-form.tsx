@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useTransition } from 'react';
+import { useState } from 'react';
 import { useForm, FormProvider, Path } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
@@ -42,7 +42,7 @@ type MultistepFormProps = {
 
 export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientId, setClientId] = React.useState<string | undefined>(undefined);
   const [planId, setPlanId] = React.useState<string | undefined>(undefined);
 
@@ -187,6 +187,36 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
       });
     }
 
+    // Check slot availability before creating the plan
+    try {
+      const { getSessions } = await import('@/server/actions/sessions');
+      const sessions = await getSessions(data.vehicleId);
+
+      const selectedDate = data.joiningDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const selectedTime = `${data.joiningDate.getHours().toString().padStart(2, '0')}:${data.joiningDate.getMinutes().toString().padStart(2, '0')}`;
+
+      // Check if the selected slot is already taken
+      const conflictSession = sessions.find((session) => {
+        const sessionDate = new Date(session.sessionDate).toISOString().split('T')[0];
+        const sessionTime = session.startTime.substring(0, 5); // Remove seconds if present
+        return sessionDate === selectedDate && sessionTime === selectedTime;
+      });
+
+      if (conflictSession) {
+        return Promise.resolve({
+          error: true,
+          message:
+            'The selected time slot is not available. Please choose an available time slot from the suggestions above.',
+        });
+      }
+    } catch (error) {
+      console.error('Error checking slot availability:', error);
+      return Promise.resolve({
+        error: true,
+        message: 'Unable to verify slot availability. Please try again.',
+      });
+    }
+
     const result = await createPlan({
       ...data,
       clientId,
@@ -283,7 +313,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
       }),
     },
     plan: {
-      component: <PlanStep />,
+      component: <PlanStep branchConfig={branchConfig} />,
       onSubmit: (data: unknown) => handlePlanStep(data as PlanValues),
       getData: () => getValues('plan'),
     },
@@ -331,35 +361,36 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
       }
 
       // Step 2: Execute the step-specific action
-      startTransition(async () => {
-        try {
-          // Get the current step's data and action handler
-          const stepData = stepComponents[currentStepKey].getData();
-          const result = await stepComponents[currentStepKey].onSubmit(stepData);
+      setIsSubmitting(true);
+      try {
+        // Get the current step's data and action handler
+        const stepData = stepComponents[currentStepKey].getData();
+        const result = await stepComponents[currentStepKey].onSubmit(stepData);
 
-          // Step 3: Handle the result of the step action
-          if (result.error) {
-            toast.error(result.message || 'Failed to save information');
+        // Step 3: Handle the result of the step action
+        if (result.error) {
+          toast.error(result.message || 'Failed to save information');
+        } else {
+          // Step 4: On success, show feedback and handle navigation
+          toast.success(result.message || 'Information saved successfully', {
+            position: 'top-right',
+          });
+
+          // If it's the last step, we're done with the form
+          if (isLastStep) {
+            router.refresh();
+            router.push('/dashboard'); // Redirect to dashboard or another appropriate page
           } else {
-            // Step 4: On success, show feedback and handle navigation
-            toast.success(result.message || 'Information saved successfully', {
-              position: 'top-right',
-            });
-
-            // If it's the last step, we're done with the form
-            if (isLastStep) {
-              router.refresh();
-              router.push('/dashboard'); // Redirect to dashboard or another appropriate page
-            } else {
-              // Otherwise, proceed to the next step
-              goToNext();
-            }
+            // Otherwise, proceed to the next step
+            goToNext();
           }
-        } catch (error) {
-          console.error('Error in step submission:', error);
-          toast.error('An unexpected error occurred');
         }
-      });
+      } catch (error) {
+        console.error('Error in step submission:', error);
+        toast.error('An unexpected error occurred');
+      } finally {
+        setIsSubmitting(false);
+      }
     } catch (error) {
       // Handle any unexpected errors
       console.error(`Error in step ${currentStep}:`, error);
@@ -383,12 +414,17 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
             type="button"
             variant="outline"
             onClick={goToPrevious}
-            disabled={isFirstStep || isPending}
+            disabled={isFirstStep || isSubmitting}
           >
             Previous
           </Button>
 
-          <Button type="button" onClick={handleNext} disabled={isPending} isLoading={isPending}>
+          <Button
+            type="button"
+            onClick={handleNext}
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
+          >
             {isLastStep ? 'Submit' : 'Next'}
           </Button>
         </div>

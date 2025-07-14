@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar, Trash2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Trash2 } from 'lucide-react';
 import { useVehicles } from '@/hooks/vehicles';
 import { useSessions } from '../hooks/sessions';
 import { updateSession, cancelSession, assignSessionToSlot } from '@/server/actions/sessions';
@@ -21,6 +21,13 @@ import { PopConfirm } from '@/components/ui/pop-confirm';
 import { cn } from '@/lib/utils';
 import { SessionTimeEditor } from './session-time-editor';
 import { SessionAssignmentModal } from './session-assignment-modal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 // Generate time slots from 6:00 AM to 8:00 PM in 30-minute intervals
 const timeSlots = Array.from({ length: 28 }, (_, i) => {
@@ -378,22 +385,13 @@ export const CalendarView = () => {
       </div>
 
       {/* Session Detail Modal */}
-      {selectedSession && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50"
-          onClick={closeSessionModal}
-        >
-          <div
-            className="bg-white rounded-lg p-6 w-96 max-w-[90vw]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Session Details</h3>
-              <Button variant="ghost" size="sm" onClick={closeSessionModal}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+      <Dialog open={!!selectedSession} onOpenChange={(open) => !open && closeSessionModal()}>
+        <DialogContent className="w-96 max-w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>Session Details</DialogTitle>
+          </DialogHeader>
 
+          {selectedSession && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div
@@ -427,37 +425,38 @@ export const CalendarView = () => {
                   <strong>Session:</strong> #{selectedSession.sessionNumber}
                 </p>
               </div>
-
-              <div className="border-t pt-3 flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={handleEditTime}>
-                  Edit Time
-                </Button>
-                <PopConfirm
-                  title="Cancel Session"
-                  description={`Are you sure you want to cancel this session with ${selectedSession.clientName} on ${format(new Date(selectedSession.sessionDate), 'PPP')} at ${selectedSession.startTime}? The session will be marked as cancelled and will be counted as an unassigned session.`}
-                  confirmText="Cancel Session"
-                  cancelText="Keep Session"
-                  onConfirm={() => handleDeleteSession(selectedSession)}
-                  variant="destructive"
-                >
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </PopConfirm>
-              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={handleEditTime}>
+              Edit Time
+            </Button>
+            {selectedSession && (
+              <PopConfirm
+                title="Cancel Session"
+                description={`Are you sure you want to cancel this session with ${selectedSession.clientName} on ${format(new Date(selectedSession.sessionDate), 'PPP')} at ${selectedSession.startTime}? The session will be marked as cancelled and will be counted as an unassigned session.`}
+                confirmText="Cancel Session"
+                cancelText="Keep Session"
+                onConfirm={() => handleDeleteSession(selectedSession)}
+                variant="destructive"
+              >
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </PopConfirm>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Session Time Editor Modal */}
-      {isEditingTime && selectedSession && (
-        <SessionTimeEditor
-          session={selectedSession}
-          onSave={handleSaveTimeEdit}
-          onCancel={handleCancelTimeEdit}
-        />
-      )}
+      <SessionTimeEditor
+        session={selectedSession}
+        open={isEditingTime}
+        onSave={handleSaveTimeEdit}
+        onCancel={handleCancelTimeEdit}
+      />
 
       {/* Session Assignment Modal */}
       <SessionAssignmentModal
