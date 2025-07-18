@@ -49,6 +49,7 @@ import {
 import { PaymentSummary } from './payment-summary';
 import { ClientPaymentContainer } from './client-payment-container';
 import { ClientDetail } from '@/server/db/client';
+import { parseDate } from '@/lib/date-utils';
 
 type ClientAdmissionFormProps = {
   client: NonNullable<ClientDetail>;
@@ -117,11 +118,23 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         joiningDate: (() => {
           const plan = client.plan?.[0];
           if (plan?.joiningDate && plan?.joiningTime) {
-            // Combine joiningDate and joiningTime into a single DateTime
-            const date = new Date(plan.joiningDate);
-            const [hours, minutes] = plan.joiningTime.split(':').map(Number);
-            date.setHours(hours, minutes, 0, 0);
-            return date;
+            // Parse date using utility function (handles all formats)
+            const savedDate = parseDate(plan.joiningDate);
+            if (savedDate) {
+              const [hours, minutes] = plan.joiningTime.split(':').map(Number);
+
+              // Create combined date with time components
+              const combinedDate = new Date(
+                savedDate.getFullYear(),
+                savedDate.getMonth(),
+                savedDate.getDate(),
+                hours,
+                minutes,
+                0,
+                0
+              );
+              return combinedDate;
+            }
           }
           return new Date();
         })(),

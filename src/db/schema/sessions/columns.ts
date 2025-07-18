@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, timestamp, uuid, date, time, integer, text } from 'drizzle-orm/pg-core';
+import { pgEnum, pgTable, timestamp, uuid, time, integer, text } from 'drizzle-orm/pg-core';
 
 export const SessionStatusEnum = pgEnum('session_status', [
   'SCHEDULED',
@@ -14,7 +14,7 @@ export const SessionTable = pgTable('sessions', {
   clientId: uuid('client_id').notNull(),
   vehicleId: uuid('vehicle_id').notNull(),
 
-  sessionDate: date('session_date', { mode: 'date' }).notNull(),
+  sessionDate: text('session_date').notNull(), // YYYY-MM-DD string to avoid timezone issues
   startTime: time('start_time').notNull(),
   endTime: time('end_time').notNull(),
 

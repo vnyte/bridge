@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
 
 // Routes that are exempt from onboarding check
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)']);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -25,17 +24,17 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.next();
     }
 
-    // const isOnboardingComplete = !!publicMetadata.isOnboardingComplete;
+    const isOnboardingComplete = !!publicMetadata.isOnboardingComplete;
 
-    // // If user is already onboarded but tries to access onboarding route, redirect to home
-    // if (isOnboardingRoute(req) && isOnboardingComplete) {
-    //   return NextResponse.redirect(new URL('/dashboard', req.url));
-    // }
+    // If user is already onboarded but tries to access onboarding route, redirect to home
+    if (isOnboardingRoute(req) && isOnboardingComplete) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
 
-    // // If user is not onboarded and tries to access a non-onboarding route, redirect to onboarding
-    // if (!isOnboardingRoute(req) && !isOnboardingComplete) {
-    //   return NextResponse.redirect(new URL('/onboarding', req.url));
-    // }
+    // If user is not onboarded and tries to access a non-onboarding route, redirect to onboarding
+    if (!isOnboardingRoute(req) && !isOnboardingComplete) {
+      return NextResponse.redirect(new URL('/onboarding', req.url));
+    }
   }
 });
 

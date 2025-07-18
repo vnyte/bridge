@@ -14,6 +14,7 @@ export type Client = {
   address: string;
   city: string;
   state: string;
+  clientCode: string;
   createdAt: Date;
   paymentStatus?: 'PENDING' | 'PARTIALLY_PAID' | 'FULLY_PAID' | null;
   remainingSessions: number;
@@ -48,6 +49,13 @@ const getCompletionStatusBadge = (isComplete: boolean) => {
 };
 
 export const columns: ColumnDef<Client>[] = [
+  {
+    accessorKey: 'clientCode',
+    header: 'Client Code',
+    cell: ({ row }) => {
+      return <Badge variant="outline">{row.original.clientCode}</Badge>;
+    },
+  },
   {
     accessorKey: 'name',
     header: 'Name',

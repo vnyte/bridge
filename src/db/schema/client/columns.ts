@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, date, boolean, unique } from 'drizzle-orm/pg-core';
+import { pgEnum, pgTable, text, timestamp, uuid, boolean, unique } from 'drizzle-orm/pg-core';
 
 export const BloodGroupEnum = pgEnum('blood_group', [
   'A+',
@@ -27,6 +27,7 @@ export const ClientTable = pgTable(
     firstName: text('first_name').notNull(),
     middleName: text('middle_name'),
     lastName: text('last_name').notNull(),
+    clientCode: text('client_code').notNull(),
 
     photoUrl: text('photo_url'),
     signatureUrl: text('signature_url'),
@@ -35,7 +36,7 @@ export const ClientTable = pgTable(
     guardianMiddleName: text('guardian_middle_name'),
     guardianLastName: text('guardian_last_name'),
 
-    birthDate: date('birth_date', { mode: 'date' }).notNull(),
+    birthDate: text('birth_date').notNull(), // YYYY-MM-DD string to avoid timezone issues
     bloodGroup: BloodGroupEnum().notNull(),
     gender: GenderEnum().notNull(),
 

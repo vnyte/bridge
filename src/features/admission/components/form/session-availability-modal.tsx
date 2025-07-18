@@ -70,7 +70,7 @@ export const SessionAvailabilityModal = ({
   // Get session details for each time slot on the selected date
   const sessionsByTimeSlot = sessions
     .filter((session) => {
-      const sessionDate = format(new Date(session.sessionDate), 'yyyy-MM-dd');
+      const sessionDate = session.sessionDate; // Already in YYYY-MM-DD format
       return sessionDate === selectedDateStr;
     })
     .reduce(
@@ -116,7 +116,7 @@ export const SessionAvailabilityModal = ({
       for (const sessionDate of sessionDates) {
         const dateStr = format(sessionDate, 'yyyy-MM-dd');
         const conflictingSession = sessions.find((session) => {
-          const sessionDateStr = format(new Date(session.sessionDate), 'yyyy-MM-dd');
+          const sessionDateStr = session.sessionDate; // Already in YYYY-MM-DD format
           const sessionTime = session.startTime.substring(0, 5);
           return sessionDateStr === dateStr && sessionTime === timeSlot;
         });

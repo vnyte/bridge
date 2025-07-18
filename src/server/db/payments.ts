@@ -21,6 +21,7 @@ const _getPayments = async (branchId: string, name?: string, paymentStatus?: str
       clientFirstName: ClientTable.firstName,
       clientMiddleName: ClientTable.middleName,
       clientLastName: ClientTable.lastName,
+      clientCode: ClientTable.clientCode,
       originalAmount: PaymentTable.originalAmount,
       finalAmount: PaymentTable.finalAmount,
       discount: PaymentTable.discount,
@@ -109,7 +110,7 @@ const _getPayments = async (branchId: string, name?: string, paymentStatus?: str
         lastPaymentDate: latestTransaction[0]?.createdAt
           ? new Date(latestTransaction[0].createdAt)
           : null,
-        clientCode: `T${new Date(payment.createdAt).getFullYear()}-${payment.clientId.slice(-2)}`, // Generate client code
+        clientCode: payment.clientCode,
       };
     })
   );

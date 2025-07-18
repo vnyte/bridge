@@ -33,6 +33,7 @@ import { VehicleTable } from '@/db/schema/vehicles/columns';
 import { ClientTable } from '@/db/schema/client/columns';
 import { calculatePaymentAmounts } from '@/lib/payment/calculate';
 import { generateSessionsFromPlan } from '@/lib/sessions';
+import { dateToString } from '@/lib/date-utils';
 import {
   createSessions,
   getSessionsByClientId,
@@ -64,6 +65,7 @@ export const createClient = async (
       ...unsafeData,
       branchId,
       tenantId,
+      birthDate: dateToString(unsafeData.birthDate), // Convert to YYYY-MM-DD string
     });
 
     return {
@@ -108,6 +110,12 @@ export const createLearningLicense = async (data: LearningLicenseValues): Action
     const learningLicenseData = {
       ...parseResult.data,
       clientId: parseResult.data.clientId || data.clientId || '',
+      // Convert date fields to YYYY-MM-DD strings
+      testConductedOn: parseResult.data.testConductedOn
+        ? dateToString(parseResult.data.testConductedOn)
+        : null,
+      issueDate: parseResult.data.issueDate ? dateToString(parseResult.data.issueDate) : null,
+      expiryDate: parseResult.data.expiryDate ? dateToString(parseResult.data.expiryDate) : null,
     };
 
     // Create or update the learning license
@@ -161,6 +169,12 @@ export const createDrivingLicense = async (data: DrivingLicenseValues): ActionRe
     const drivingLicenseData = {
       ...parseResult.data,
       clientId: parseResult.data.clientId || data.clientId || '',
+      // Convert date fields to YYYY-MM-DD strings
+      appointmentDate: parseResult.data.appointmentDate
+        ? dateToString(parseResult.data.appointmentDate)
+        : null,
+      issueDate: parseResult.data.issueDate ? dateToString(parseResult.data.issueDate) : null,
+      expiryDate: parseResult.data.expiryDate ? dateToString(parseResult.data.expiryDate) : null,
     };
 
     // Create or update the driving license
@@ -272,10 +286,13 @@ export const createPlan = async (
       }
     }
 
+    // Convert date to YYYY-MM-DD string (no timezone conversion)
+    const dateString = dateToString(data.joiningDate);
+
     // Make sure we're explicitly passing the joiningDate and joiningTime for update
     const planData = {
       ...parseResult.data,
-      joiningDate: data.joiningDate, // Explicitly pass the joiningDate
+      joiningDate: dateString, // Pass as YYYY-MM-DD string, no timezone conversion
       joiningTime: timeString, // Explicitly pass the formatted time
     };
 
@@ -336,7 +353,7 @@ export const createPlan = async (
           const updateResult = await updateScheduledSessionsForClient(
             data.clientId,
             sessionsToGenerate.map((session) => ({
-              sessionDate: session.sessionDate,
+              sessionDate: session.sessionDate, // Already a string from generateSessionsFromPlan
               startTime: session.startTime,
               endTime: session.endTime,
               vehicleId: session.vehicleId,
@@ -488,7 +505,7 @@ export const createPayment = async (
     // Create or update the payment
     const { isExistingPayment, paymentId } = await upsertPaymentInDB(parseResult.data);
 
-    // Generate sessions when payment is completed (onboarding finished)
+    // Check if sessions need to be created when payment is completed (onboarding finished)
     if (paymentId && !isExistingPayment) {
       try {
         // Get the plan details
@@ -497,42 +514,51 @@ export const createPayment = async (
         });
 
         if (plan) {
-          // Get client details
-          const client = await db.query.ClientTable.findFirst({
-            where: eq(ClientTable.id, plan.clientId),
-          });
+          // Check if sessions already exist for this client (created by createPlan)
+          const existingSessions = await getSessionsByClientId(plan.clientId);
 
-          if (client) {
-            // Get branch config for session generation
-            const branch = await getCurrentOrganizationBranch();
-            const branchConfig = {
-              workingDays: branch?.workingDays || DEFAULT_WORKING_DAYS,
-              operatingHours: branch?.operatingHours || DEFAULT_OPERATING_HOURS,
-            };
+          if (existingSessions.length === 0) {
+            // Only create sessions if none exist (fallback in case createPlan didn't create them)
+            const client = await db.query.ClientTable.findFirst({
+              where: eq(ClientTable.id, plan.clientId),
+            });
 
-            // Generate sessions from plan
-            const sessions = generateSessionsFromPlan(
-              {
-                joiningDate: plan.joiningDate,
-                joiningTime: plan.joiningTime,
-                numberOfSessions: plan.numberOfSessions,
-                vehicleId: plan.vehicleId,
-              },
-              {
-                firstName: client.firstName,
-                lastName: client.lastName,
-                id: client.id,
-              },
-              branchConfig
-            );
+            if (client) {
+              // Get branch config for session generation
+              const branch = await getCurrentOrganizationBranch();
+              const branchConfig = {
+                workingDays: branch?.workingDays || DEFAULT_WORKING_DAYS,
+                operatingHours: branch?.operatingHours || DEFAULT_OPERATING_HOURS,
+              };
 
-            // Create the sessions
-            const sessionsResult = await createSessions(sessions);
-            if (sessionsResult.error) {
-              console.error('Failed to create sessions:', sessionsResult.message);
-            } else {
-              console.log('Successfully created sessions:', sessionsResult.message);
+              // Generate sessions from plan
+              const sessions = generateSessionsFromPlan(
+                {
+                  joiningDate: plan.joiningDate,
+                  joiningTime: plan.joiningTime,
+                  numberOfSessions: plan.numberOfSessions,
+                  vehicleId: plan.vehicleId,
+                },
+                {
+                  firstName: client.firstName,
+                  lastName: client.lastName,
+                  id: client.id,
+                },
+                branchConfig
+              );
+
+              // Create the sessions
+              const sessionsResult = await createSessions(sessions);
+              if (sessionsResult.error) {
+                console.error('Failed to create sessions:', sessionsResult.message);
+              } else {
+                console.log('Successfully created sessions as fallback:', sessionsResult.message);
+              }
             }
+          } else {
+            console.log(
+              `Sessions already exist for client (${existingSessions.length} sessions), skipping creation in payment step`
+            );
           }
         }
       } catch (sessionError) {

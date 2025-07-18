@@ -1,4 +1,4 @@
-import { date, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const VehicleTable = pgTable('vehicles', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -6,9 +6,9 @@ export const VehicleTable = pgTable('vehicles', {
   number: text('number').notNull(),
   rent: integer('rent').notNull(),
 
-  pucExpiry: date('puc_expiry'),
-  insuranceExpiry: date('insurance_expiry'),
-  registrationExpiry: date('registration_expiry'),
+  pucExpiry: text('puc_expiry'), // YYYY-MM-DD string to avoid timezone issues
+  insuranceExpiry: text('insurance_expiry'), // YYYY-MM-DD string to avoid timezone issues
+  registrationExpiry: text('registration_expiry'), // YYYY-MM-DD string to avoid timezone issues
 
   branchId: uuid('branch_id').notNull(),
 

@@ -18,7 +18,7 @@ export const createSessions = async (
   sessions: Array<{
     clientId: string;
     vehicleId: string;
-    sessionDate: Date;
+    sessionDate: string; // YYYY-MM-DD string
     startTime: string;
     endTime: string;
     status: 'SCHEDULED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED';
@@ -96,7 +96,7 @@ export const getSessionsByClientId = async (clientId: string) => {
 export const assignSessionToSlot = async (
   clientId: string,
   vehicleId: string,
-  sessionDate: Date,
+  sessionDate: string, // YYYY-MM-DD string
   startTime: string,
   endTime: string
 ) => {
@@ -125,7 +125,7 @@ export const assignSessionToSlot = async (
 export const updateScheduledSessionsForClient = async (
   clientId: string,
   newSessions: Array<{
-    sessionDate: Date;
+    sessionDate: string; // YYYY-MM-DD string
     startTime: string;
     endTime: string;
     vehicleId: string;

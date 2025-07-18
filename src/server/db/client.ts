@@ -32,6 +32,7 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
       address: ClientTable.address,
       city: ClientTable.city,
       state: ClientTable.state,
+      clientCode: ClientTable.clientCode,
       createdAt: ClientTable.createdAt,
       paymentStatus: PaymentTable.paymentStatus,
       hasLearningLicense: LearningLicenseTable.id,

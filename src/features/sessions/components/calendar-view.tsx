@@ -15,6 +15,7 @@ import { useVehicles } from '@/hooks/vehicles';
 import { useSessions } from '../hooks/sessions';
 import { updateSession, cancelSession, assignSessionToSlot } from '@/server/actions/sessions';
 import type { Session } from '@/server/db/sessions';
+import { dateToString, formatDateForDisplay } from '@/lib/date-utils';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopConfirm } from '@/components/ui/pop-confirm';
@@ -101,8 +102,8 @@ export const CalendarView = () => {
 
     // Find sessions for the selected date
     const sessionsForSelectedDate = sessions.filter((session) => {
-      const sessionDate = new Date(session.sessionDate);
-      return format(sessionDate, 'yyyy-MM-dd') === selectedDateStr;
+      // Use string comparison directly since sessionDate is already YYYY-MM-DD format
+      return session.sessionDate === selectedDateStr;
     });
 
     if (sessionsForSelectedDate.length > 0) {
@@ -118,11 +119,8 @@ export const CalendarView = () => {
 
     // Find the session that matches both date and time
     const foundSession = sessions.find((session) => {
-      const sessionDate = new Date(session.sessionDate);
-      const sessionDateStr = format(sessionDate, 'yyyy-MM-dd');
-
-      // Direct string comparison with the formatted time
-      const dateMatch = sessionDateStr === selectedDateStr;
+      // Direct string comparison since sessionDate is already YYYY-MM-DD format
+      const dateMatch = session.sessionDate === selectedDateStr;
 
       // Compare the formatted time slot with the session's startTime
       // The session.startTime might already be in HH:MM:00 format from the database
@@ -229,7 +227,7 @@ export const CalendarView = () => {
       const result = await assignSessionToSlot(
         clientId,
         selectedVehicle,
-        selectedTimeSlot.date || selectedDate,
+        dateToString(selectedTimeSlot.date || selectedDate),
         startTime,
         endTime
       );
@@ -508,7 +506,7 @@ export const CalendarView = () => {
                 <div>
                   <p className="font-medium">{selectedSession.clientName}</p>
                   <p className="text-sm text-gray-500">
-                    {format(new Date(selectedSession.sessionDate), 'PPP')}
+                    {formatDateForDisplay(selectedSession.sessionDate)}
                   </p>
                 </div>
               </div>
@@ -534,7 +532,7 @@ export const CalendarView = () => {
             {selectedSession && (
               <PopConfirm
                 title="Cancel Session"
-                description={`Are you sure you want to cancel this session with ${selectedSession.clientName} on ${format(new Date(selectedSession.sessionDate), 'PPP')} at ${selectedSession.startTime}? The session will be marked as cancelled and will be counted as an unassigned session.`}
+                description={`Are you sure you want to cancel this session with ${selectedSession.clientName} on ${formatDateForDisplay(selectedSession.sessionDate)} at ${selectedSession.startTime}? The session will be marked as cancelled and will be counted as an unassigned session.`}
                 confirmText="Cancel Session"
                 cancelText="Keep Session"
                 onConfirm={() => handleDeleteSession(selectedSession)}

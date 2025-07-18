@@ -29,8 +29,6 @@ import {
   createPlan,
   createPayment,
 } from '../../server/action';
-import { createSessions } from '@/server/actions/sessions';
-import { generateSessionsFromPlan } from '@/lib/sessions';
 import { PaymentContainer } from './steps/payment';
 
 type MultistepFormProps = {
@@ -197,7 +195,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
 
       // Check if the selected slot is already taken
       const conflictSession = sessions.find((session) => {
-        const sessionDate = new Date(session.sessionDate).toISOString().split('T')[0];
+        const sessionDate = session.sessionDate; // Already in YYYY-MM-DD format
         const sessionTime = session.startTime.substring(0, 5); // Remove seconds if present
         return sessionDate === selectedDate && sessionTime === selectedTime;
       });
@@ -224,50 +222,9 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
 
     setPlanId(result.planId);
 
-    try {
-      const planData = getValues('plan');
-      const planDataObj = {
-        joiningDate: planData.joiningDate,
-        joiningTime:
-          planData.joiningDate.getHours().toString().padStart(2, '0') +
-          ':' +
-          planData.joiningDate.getMinutes().toString().padStart(2, '0'),
-        numberOfSessions: planData.numberOfSessions,
-        vehicleId: planData.vehicleId,
-      };
-
-      const clientDataObj = {
-        id: clientId,
-        firstName: getValues('personalInfo').firstName,
-        lastName: getValues('personalInfo').lastName,
-      };
-
-      const sessionsToCreate = generateSessionsFromPlan(planDataObj, clientDataObj, branchConfig);
-
-      // Create sessions in the database
-      const sessionsResult = await createSessions(sessionsToCreate);
-
-      if (sessionsResult.error) {
-        // Payment was created but sessions failed - log warning but don't fail the flow
-        console.error('Sessions creation failed:', sessionsResult.message);
-        return {
-          error: false,
-          message: `Payment created successfully, but some sessions could not be scheduled. Please check the calendar to manually schedule sessions.`,
-        };
-      }
-
-      return {
-        error: false,
-        message: `Payment and ${sessionsToCreate.length} sessions created successfully`,
-      };
-    } catch (error) {
-      console.error('Error creating sessions:', error);
-      return {
-        error: false,
-        message:
-          'Payment created successfully, but sessions could not be scheduled. Please check the calendar to manually schedule sessions.',
-      };
-    }
+    // Sessions are automatically created/updated by the createPlan server action
+    // No need to create them again here
+    return result;
   };
 
   const handlePaymentStep = async (data: PaymentValues): ActionReturnType => {

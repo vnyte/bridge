@@ -3,10 +3,16 @@ import { ClientTable, PaymentTable, PlanTable } from '@/db/schema';
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
 import { eq } from 'drizzle-orm';
+import { getNextClientCode } from '@/db/utils/client-code';
 
 export const upsertClientInDB = async (data: typeof ClientTable.$inferInsert) => {
   // Create a variable to track if this was an update operation
   let isExistingClient = false;
+
+  // Generate client code if not provided
+  if (!data.clientCode) {
+    data.clientCode = await getNextClientCode(data.tenantId);
+  }
 
   // Use onConflictDoUpdate to handle the case where a client with the same phone number and tenant already exists
   const [client] = await db

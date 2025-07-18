@@ -1,4 +1,5 @@
 import { addDays, format, parse } from 'date-fns';
+import { parseDate, dateToString } from './date-utils';
 
 export type TimeSlot = {
   time: string;
@@ -170,7 +171,7 @@ export const parseDisplayTime = (displayTime: string): string => {
 // Generate session dates from plan data
 export const generateSessionsFromPlan = (
   plan: {
-    joiningDate: Date;
+    joiningDate: Date | string;
     joiningTime: string;
     numberOfSessions: number;
     vehicleId: string;
@@ -185,14 +186,27 @@ export const generateSessionsFromPlan = (
   clientId: string;
   clientName: string;
   vehicleId: string;
-  sessionDate: Date;
+  sessionDate: string; // YYYY-MM-DD string
   startTime: string;
   endTime: string;
   status: 'SCHEDULED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED';
   sessionNumber: number;
 }> => {
   const sessions = [];
-  let currentDate = new Date(plan.joiningDate);
+
+  // Parse joining date using utility function (handles all formats)
+  const joiningDate = parseDate(plan.joiningDate);
+  if (!joiningDate) {
+    throw new Error('Invalid joining date provided');
+  }
+
+  // Start from joining date (timezone-safe)
+  let currentDate = new Date(
+    joiningDate.getFullYear(),
+    joiningDate.getMonth(),
+    joiningDate.getDate()
+  );
+
   let sessionsScheduled = 0;
   let sessionNumber = 1;
 
@@ -207,7 +221,7 @@ export const generateSessionsFromPlan = (
         clientId: client.id,
         clientName: `${client.firstName} ${client.lastName}`,
         vehicleId: plan.vehicleId,
-        sessionDate: new Date(currentDate),
+        sessionDate: dateToString(currentDate), // Store as YYYY-MM-DD string
         startTime: plan.joiningTime,
         endTime: calculateEndTime(plan.joiningTime, 30), // Default 30 minutes
         status: 'SCHEDULED' as const,
@@ -218,10 +232,20 @@ export const generateSessionsFromPlan = (
       sessionNumber++;
     }
 
-    currentDate = addDays(currentDate, 1);
+    // Move to next day (timezone-safe)
+    currentDate = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate() + 1
+    );
 
-    // Safety check to prevent infinite loop
-    if (currentDate > addDays(plan.joiningDate, 365)) {
+    // Safety check to prevent infinite loop (365 days from joining date)
+    const safetyLimit = new Date(
+      joiningDate.getFullYear() + 1,
+      joiningDate.getMonth(),
+      joiningDate.getDate()
+    );
+    if (currentDate > safetyLimit) {
       break;
     }
   }

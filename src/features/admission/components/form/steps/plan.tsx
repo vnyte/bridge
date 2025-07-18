@@ -86,7 +86,7 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
 
         // Check if the selected slot is already taken
         const conflictSession = sessions.find((session) => {
-          const sessionDate = format(new Date(session.sessionDate), 'yyyy-MM-dd');
+          const sessionDate = session.sessionDate; // Already in YYYY-MM-DD format
           const sessionTime = session.startTime.substring(0, 5); // Remove seconds if present
           return sessionDate === selectedDate && sessionTime === selectedTime;
         });
@@ -96,7 +96,7 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
           const allTimeSlots = generateTimeSlots(branchConfig.operatingHours);
           const occupiedSlots = sessions
             .filter((session) => {
-              const sessionDate = format(new Date(session.sessionDate), 'yyyy-MM-dd');
+              const sessionDate = session.sessionDate; // Already in YYYY-MM-DD format
               return sessionDate === selectedDate;
             })
             .map((session) => session.startTime.substring(0, 5));

@@ -57,7 +57,7 @@ export const createSessions = async (
   sessions: Array<{
     clientId: string;
     vehicleId: string;
-    sessionDate: Date;
+    sessionDate: string; // YYYY-MM-DD string
     startTime: string;
     endTime: string;
     status: 'SCHEDULED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED';
@@ -132,7 +132,7 @@ export const cancelSession = async (sessionId: string) => {
 export const assignSessionToSlot = async (
   clientId: string,
   vehicleId: string,
-  sessionDate: Date,
+  sessionDate: string, // YYYY-MM-DD string
   startTime: string,
   endTime: string
 ) => {
@@ -187,7 +187,7 @@ export const getSessionsByClientId = async (clientId: string) => {
 export const updateScheduledSessionsForClient = async (
   clientId: string,
   newSessions: Array<{
-    sessionDate: Date;
+    sessionDate: string; // YYYY-MM-DD string format
     startTime: string;
     endTime: string;
     vehicleId: string;
@@ -201,61 +201,76 @@ export const updateScheduledSessionsForClient = async (
     throw new Error('Unauthorized');
   }
 
-  // Get existing SCHEDULED sessions for this client
-  const existingSessions = await db.query.SessionTable.findMany({
-    where: and(
-      eq(SessionTable.clientId, clientId),
-      eq(SessionTable.branchId, branchId),
-      eq(SessionTable.status, 'SCHEDULED')
-    ),
+  // Get ALL existing sessions for this client to understand what's been "touched"
+  const allExistingSessions = await db.query.SessionTable.findMany({
+    where: and(eq(SessionTable.clientId, clientId), eq(SessionTable.branchId, branchId)),
     orderBy: SessionTable.sessionNumber,
   });
 
-  const updates = [];
-  const creates = [];
-  const deletes = [];
+  // Separate touched (non-SCHEDULED) and untouched (SCHEDULED) sessions
+  const touchedSessions = allExistingSessions.filter((s) => s.status !== 'SCHEDULED');
+  const scheduledSessions = allExistingSessions.filter((s) => s.status === 'SCHEDULED');
 
-  // Update existing sessions with new data
-  for (let i = 0; i < Math.min(existingSessions.length, newSessions.length); i++) {
-    const existingSession = existingSessions[i];
-    const newSession = newSessions[i];
+  // Count how many sessions we have total and how many more we need
+  const totalSessionsNeeded = newSessions.length;
+  const touchedSessionsCount = touchedSessions.length;
+  const remainingSessionsNeeded = Math.max(0, totalSessionsNeeded - touchedSessionsCount);
 
-    updates.push(
-      db
-        .update(SessionTable)
-        .set({
-          sessionDate: newSession.sessionDate,
-          startTime: newSession.startTime,
-          endTime: newSession.endTime,
-          vehicleId: newSession.vehicleId,
-          sessionNumber: newSession.sessionNumber,
-          updatedAt: new Date(),
-        })
-        .where(eq(SessionTable.id, existingSession.id))
+  console.log(
+    `Plan update: ${touchedSessionsCount} touched sessions preserved, ${remainingSessionsNeeded} new sessions needed`
+  );
+
+  const updates: Promise<unknown>[] = [];
+  const creates: Promise<unknown>[] = [];
+  const deletes: Promise<unknown>[] = [];
+
+  // If we need fewer total sessions than we have touched sessions, we can't proceed
+  if (totalSessionsNeeded < touchedSessionsCount) {
+    throw new Error(
+      `Cannot reduce plan to ${totalSessionsNeeded} sessions as ${touchedSessionsCount} sessions have already been completed/started. Minimum allowed: ${touchedSessionsCount} sessions.`
     );
   }
 
-  // Create new sessions if we need more
-  if (newSessions.length > existingSessions.length) {
-    const sessionsToCreate = newSessions.slice(existingSessions.length);
-    creates.push(
-      db.insert(SessionTable).values(
-        sessionsToCreate.map((session) => ({
-          ...session,
+  // Delete all scheduled sessions (we'll recreate what's needed)
+  if (scheduledSessions.length > 0) {
+    for (const session of scheduledSessions) {
+      deletes.push(db.delete(SessionTable).where(eq(SessionTable.id, session.id)));
+    }
+  }
+
+  // Create new scheduled sessions for remaining slots
+  if (remainingSessionsNeeded > 0) {
+    // Find the next available session numbers (after touched sessions)
+    const usedSessionNumbers = new Set(touchedSessions.map((s) => s.sessionNumber));
+    const newSessionsToCreate = [];
+
+    let nextSessionNumber = 1;
+    let createdCount = 0;
+
+    // Generate new sessions with available session numbers
+    for (const newSession of newSessions) {
+      // Find next available session number
+      while (usedSessionNumbers.has(nextSessionNumber)) {
+        nextSessionNumber++;
+      }
+
+      if (createdCount < remainingSessionsNeeded) {
+        newSessionsToCreate.push({
+          ...newSession,
+          sessionNumber: nextSessionNumber,
           clientId,
           branchId,
           createdBy: userId,
           status: 'SCHEDULED' as const,
-        }))
-      )
-    );
-  }
+        });
+        usedSessionNumbers.add(nextSessionNumber);
+        createdCount++;
+      }
+      nextSessionNumber++;
+    }
 
-  // Delete excess sessions if we need fewer
-  if (existingSessions.length > newSessions.length) {
-    const sessionsToDelete = existingSessions.slice(newSessions.length);
-    for (const session of sessionsToDelete) {
-      deletes.push(db.delete(SessionTable).where(eq(SessionTable.id, session.id)));
+    if (newSessionsToCreate.length > 0) {
+      creates.push(db.insert(SessionTable).values(newSessionsToCreate));
     }
   }
 
@@ -263,15 +278,11 @@ export const updateScheduledSessionsForClient = async (
   await Promise.all([...updates, ...creates, ...deletes]);
 
   return {
-    updated: updates.length,
-    created:
-      newSessions.length > existingSessions.length
-        ? newSessions.length - existingSessions.length
-        : 0,
-    deleted:
-      existingSessions.length > newSessions.length
-        ? existingSessions.length - newSessions.length
-        : 0,
+    updated: 0, // We don't update existing sessions, only delete and recreate
+    created: remainingSessionsNeeded,
+    deleted: scheduledSessions.length,
+    preserved: touchedSessionsCount,
+    message: `${touchedSessionsCount} completed/started sessions preserved, ${scheduledSessions.length} scheduled sessions updated, ${remainingSessionsNeeded} new sessions created`,
   };
 };
 
