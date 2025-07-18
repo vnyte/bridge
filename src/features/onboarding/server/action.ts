@@ -18,7 +18,7 @@ export async function createTenant(unsafeData: OnboardingFormValues) {
   }
 
   // Keep track of created Clerk resources for potential rollback
-  const createdorgIds: string[] = [];
+  const createdOrgIds: string[] = [];
 
   try {
     const clerk = await clerkClient();
@@ -32,7 +32,7 @@ export async function createTenant(unsafeData: OnboardingFormValues) {
         createdBy: userId,
       });
 
-      createdorgIds.push(clerkOrg.id);
+      createdOrgIds.push(clerkOrg.id);
 
       // Prepare branch data for database transaction
       branchesData.push({
@@ -51,7 +51,7 @@ export async function createTenant(unsafeData: OnboardingFormValues) {
     const { tenant, branches } = await createTenantWithBranches(tenantData, branchesData);
 
     // Update Clerk organizations with the correct tenantId and branchId
-    for (const orgId of createdorgIds) {
+    for (const orgId of createdOrgIds) {
       await clerk.organizations.updateOrganization(orgId, {
         publicMetadata: {
           tenantId: tenant.id,
@@ -78,7 +78,7 @@ export async function createTenant(unsafeData: OnboardingFormValues) {
     console.error('Error during tenant/branch creation:', error);
 
     // Rollback Clerk resources if any exist
-    await rollbackClerkResources(createdorgIds, userId);
+    await rollbackClerkResources(createdOrgIds, userId);
 
     // Database operations will be automatically rolled back by the transaction
 
@@ -106,7 +106,6 @@ async function rollbackClerkResources(orgIds: string[], userId: string): Promise
       }
     }
 
-    // Reset user metadata if needed
     try {
       await clerk.users.updateUserMetadata(userId, {
         publicMetadata: {

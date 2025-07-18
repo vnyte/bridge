@@ -30,7 +30,10 @@ import { db } from '@/db';
 import { eq } from 'drizzle-orm';
 import { PlanTable } from '@/db/schema/plan/columns';
 import { VehicleTable } from '@/db/schema/vehicles/columns';
+import { ClientTable } from '@/db/schema/client/columns';
 import { calculatePaymentAmounts } from '@/lib/payment/calculate';
+import { generateSessionsFromPlan } from '@/lib/sessions';
+import { createSessions } from '@/server/actions/sessions';
 
 export const createClient = async (
   unsafeData: z.infer<typeof personalInfoSchema>
@@ -93,8 +96,18 @@ export const createLearningLicense = async (data: LearningLicenseValues): Action
       return { error: true, message: 'Invalid learning license data' };
     }
 
+    // Ensure clientId is present for database operation
+    if (!parseResult.data.clientId && !data.clientId) {
+      return { error: true, message: 'Client ID is required' };
+    }
+
+    const learningLicenseData = {
+      ...parseResult.data,
+      clientId: parseResult.data.clientId || data.clientId || '',
+    };
+
     // Create or update the learning license
-    const { isExistingLicense } = await upsertLearningLicenseInDB(parseResult.data);
+    const { isExistingLicense } = await upsertLearningLicenseInDB(learningLicenseData);
 
     const action = isExistingLicense ? 'updated' : 'created';
     return {
@@ -109,7 +122,7 @@ export const createLearningLicense = async (data: LearningLicenseValues): Action
 
 export const createDrivingLicense = async (data: DrivingLicenseValues): ActionReturnType => {
   const { userId, orgId } = await auth();
-
+  console.log(data, 'data');
   if (!userId || !orgId) {
     return { error: true, message: 'User not authenticated or not in an organization' };
   }
@@ -123,15 +136,31 @@ export const createDrivingLicense = async (data: DrivingLicenseValues): ActionRe
   try {
     // Validate the driving license data
     const parseResult = drivingLicenseSchema.safeParse(data);
-
-    console.log('parseResult', parseResult.error);
+    console.log('Driving license data:', JSON.stringify(data, null, 2));
 
     if (!parseResult.success) {
-      return { error: true, message: 'Invalid driving license data' };
+      console.log(
+        'Driving license validation errors:',
+        JSON.stringify(parseResult.error.issues, null, 2)
+      );
+      return {
+        error: true,
+        message: `Invalid driving license data: ${parseResult.error.issues.map((i) => i.message).join(', ')}`,
+      };
     }
 
+    // Ensure clientId is present for database operation
+    if (!parseResult.data.clientId && !data.clientId) {
+      return { error: true, message: 'Client ID is required' };
+    }
+
+    const drivingLicenseData = {
+      ...parseResult.data,
+      clientId: parseResult.data.clientId || data.clientId || '',
+    };
+
     // Create or update the driving license
-    const { isExistingLicense } = await upsertDrivingLicenseInDB(parseResult.data);
+    const { isExistingLicense } = await upsertDrivingLicenseInDB(drivingLicenseData);
 
     const action = isExistingLicense ? 'updated' : 'created';
     return {
@@ -229,6 +258,7 @@ export const createPayment = async (
 ): Promise<{ error: boolean; message: string; paymentId?: string }> => {
   const { userId } = await auth();
 
+  console.log('Payment data received:', JSON.stringify(unsafeData, null, 2));
   if (!userId) {
     return { error: true, message: 'Unauthorized' };
   }
@@ -273,6 +303,15 @@ export const createPayment = async (
 
     const { data } = paymentSchema.safeParse({ ...unsafeData, originalAmount, finalAmount });
 
+    // Check if payment mode is cash to automatically mark as paid
+    const isCashPayment =
+      (data?.paymentType === 'FULL_PAYMENT' && data?.fullPaymentMode === 'CASH') ||
+      (data?.paymentType === 'INSTALLMENTS' &&
+        (data?.firstPaymentMode === 'CASH' || data?.secondPaymentMode === 'CASH'));
+
+    console.log('Payment data received:', JSON.stringify(data, null, 2));
+    console.log('Is cash payment:', isCashPayment);
+
     // Validate the payment data with our calculated values
     const paymentData = {
       ...data,
@@ -291,7 +330,28 @@ export const createPayment = async (
         data?.paymentType === 'PAY_LATER' && data?.paymentDueDate
           ? new Date(data.paymentDueDate).toISOString()
           : null,
+      // Auto-mark cash payments as paid
+      fullPaymentPaid:
+        data?.paymentType === 'FULL_PAYMENT' && data?.fullPaymentMode === 'CASH'
+          ? true
+          : data?.fullPaymentPaid || false,
+      firstInstallmentPaid:
+        data?.paymentType === 'INSTALLMENTS' && data?.firstPaymentMode === 'CASH'
+          ? true
+          : data?.firstInstallmentPaid || false,
+      // Auto-set payment status for cash payments
+      paymentStatus: isCashPayment
+        ? data?.paymentType === 'FULL_PAYMENT'
+          ? 'FULLY_PAID'
+          : data?.paymentType === 'INSTALLMENTS'
+            ? data?.firstPaymentMode === 'CASH' && data?.secondPaymentMode === 'CASH'
+              ? 'FULLY_PAID'
+              : 'PARTIALLY_PAID'
+            : 'PENDING'
+        : data?.paymentStatus || 'PENDING',
     };
+
+    console.log('Final payment data being validated:', JSON.stringify(paymentData, null, 2));
 
     const parseResult = paymentSchema.safeParse(paymentData);
 
@@ -300,13 +360,117 @@ export const createPayment = async (
       return { error: true, message: 'Invalid payment data' };
     }
 
+    console.log('Payment data after validation:', JSON.stringify(parseResult.data, null, 2));
+
     // Create or update the payment
     const { isExistingPayment, paymentId } = await upsertPaymentInDB(parseResult.data);
 
+    // Generate sessions when payment is completed (onboarding finished)
+    if (paymentId && !isExistingPayment) {
+      try {
+        // Get the plan details
+        const plan = await db.query.PlanTable.findFirst({
+          where: eq(PlanTable.id, unsafeData.planId),
+        });
+
+        if (plan) {
+          // Get client details
+          const client = await db.query.ClientTable.findFirst({
+            where: eq(ClientTable.id, plan.clientId),
+          });
+
+          if (client) {
+            // Get branch config for session generation
+            const branch = await getCurrentOrganizationBranch();
+            const branchConfig = {
+              workingDays: branch?.workingDays || DEFAULT_WORKING_DAYS,
+              operatingHours: branch?.operatingHours || DEFAULT_OPERATING_HOURS,
+            };
+
+            // Generate sessions from plan
+            const sessions = generateSessionsFromPlan(
+              {
+                joiningDate: plan.joiningDate,
+                joiningTime: plan.joiningTime,
+                numberOfSessions: plan.numberOfSessions,
+                vehicleId: plan.vehicleId,
+              },
+              {
+                firstName: client.firstName,
+                lastName: client.lastName,
+                id: client.id,
+              },
+              branchConfig
+            );
+
+            // Create the sessions
+            const sessionsResult = await createSessions(sessions);
+            if (sessionsResult.error) {
+              console.error('Failed to create sessions:', sessionsResult.message);
+            } else {
+              console.log('Successfully created sessions:', sessionsResult.message);
+            }
+          }
+        }
+      } catch (sessionError) {
+        console.error('Error creating sessions:', sessionError);
+        // Don't fail the payment if session creation fails
+      }
+    }
+
+    // Create transaction records for cash payments
+    if (isCashPayment && paymentId) {
+      const { ClientTransactionTable } = await import('@/db/schema/client-transactions/columns');
+
+      try {
+        // Create transaction for full payment
+        if (data?.paymentType === 'FULL_PAYMENT' && data?.fullPaymentMode === 'CASH') {
+          await db.insert(ClientTransactionTable).values({
+            paymentId,
+            amount: finalAmount,
+            paymentMode: 'CASH',
+            transactionStatus: 'SUCCESS',
+            transactionReference: `CASH-${Date.now()}`,
+            notes: 'Cash payment received',
+          });
+        }
+
+        // Create transaction for first installment if cash
+        if (data?.paymentType === 'INSTALLMENTS' && data?.firstPaymentMode === 'CASH') {
+          await db.insert(ClientTransactionTable).values({
+            paymentId,
+            amount: firstInstallmentAmount,
+            paymentMode: 'CASH',
+            transactionStatus: 'SUCCESS',
+            transactionReference: `CASH-INST1-${Date.now()}`,
+            notes: 'First installment cash payment received',
+            installmentNumber: 1,
+          });
+        }
+
+        // Create transaction for second installment if cash
+        if (data?.paymentType === 'INSTALLMENTS' && data?.secondPaymentMode === 'CASH') {
+          await db.insert(ClientTransactionTable).values({
+            paymentId,
+            amount: secondInstallmentAmount,
+            paymentMode: 'CASH',
+            transactionStatus: 'SUCCESS',
+            transactionReference: `CASH-INST2-${Date.now()}`,
+            notes: 'Second installment cash payment received',
+            installmentNumber: 2,
+          });
+        }
+      } catch (transactionError) {
+        console.error('Error creating cash transaction records:', transactionError);
+        // Don't fail the payment creation if transaction logging fails
+      }
+    }
+
     const action = isExistingPayment ? 'updated' : 'created';
+    const cashMessage = isCashPayment ? ' and marked as paid (cash received)' : '';
     return {
       error: false,
-      message: `Payment ${action} successfully`,
+      message: `Payment ${action} successfully${cashMessage}`,
       paymentId,
     };
   } catch (error) {
@@ -348,4 +512,37 @@ export const getBranchConfig = async (): Promise<{
     console.error('Error fetching branch config:', error);
     return { error: true, message: 'Failed to fetch branch configuration' };
   }
+};
+
+// Update functions (aliases for the existing upsert functions)
+export const updateClient = async (
+  _clientId: string,
+  data: z.infer<typeof personalInfoSchema>
+): ActionReturnType => {
+  return createClient(data);
+};
+
+export const updateLearningLicense = async (
+  _licenseId: string,
+  data: LearningLicenseValues
+): ActionReturnType => {
+  return createLearningLicense(data);
+};
+
+export const updateDrivingLicense = async (
+  _licenseId: string,
+  data: DrivingLicenseValues
+): ActionReturnType => {
+  return createDrivingLicense(data);
+};
+
+export const updatePlan = async (_planId: string, data: PlanValues): ActionReturnType => {
+  return createPlan(data);
+};
+
+export const updatePayment = async (
+  _paymentId: string,
+  data: z.infer<typeof paymentSchema>
+): ActionReturnType => {
+  return createPayment(data);
 };

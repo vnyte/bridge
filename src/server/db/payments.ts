@@ -91,7 +91,8 @@ const _getPayments = async (branchId: string, name?: string, paymentStatus?: str
       }
 
       // Determine payment status based on current state
-      let displayStatus = payment.paymentStatus || 'PENDING';
+      let displayStatus: 'PENDING' | 'PARTIALLY_PAID' | 'FULLY_PAID' | 'OVERDUE' =
+        payment.paymentStatus || 'PENDING';
       if (isOverdue && amountDue > 0) {
         displayStatus = 'OVERDUE';
       } else if (amountDue === 0) {
@@ -104,7 +105,7 @@ const _getPayments = async (branchId: string, name?: string, paymentStatus?: str
         amountDue,
         totalFees: payment.finalAmount,
         nextInstallmentDate,
-        paymentStatus: displayStatus as 'PENDING' | 'PARTIALLY_PAID' | 'FULLY_PAID' | 'OVERDUE',
+        paymentStatus: displayStatus,
         lastPaymentDate: latestTransaction[0]?.createdAt
           ? new Date(latestTransaction[0].createdAt)
           : null,
@@ -141,6 +142,76 @@ export const getPayments = async (name?: string, paymentStatus?: string) => {
   }
 
   return await _getPayments(branchId, name, paymentStatus);
+};
+
+const _getOverduePaymentsCount = async (branchId: string) => {
+  const conditions = [eq(ClientTable.branchId, branchId)];
+
+  const payments = await db
+    .select({
+      id: PaymentTable.id,
+      paymentStatus: PaymentTable.paymentStatus,
+      paymentType: PaymentTable.paymentType,
+      firstInstallmentDate: PaymentTable.firstInstallmentDate,
+      firstInstallmentPaid: PaymentTable.firstInstallmentPaid,
+      secondInstallmentDate: PaymentTable.secondInstallmentDate,
+      secondInstallmentPaid: PaymentTable.secondInstallmentPaid,
+      paymentDueDate: PaymentTable.paymentDueDate,
+      fullPaymentDate: PaymentTable.fullPaymentDate,
+      fullPaymentPaid: PaymentTable.fullPaymentPaid,
+    })
+    .from(PaymentTable)
+    .innerJoin(ClientTable, eq(PaymentTable.clientId, ClientTable.id))
+    .where(and(...conditions));
+
+  const today = new Date();
+  let overdueCount = 0;
+
+  payments.forEach((payment) => {
+    let isOverdue = false;
+    let hasAmount = false;
+
+    if (payment.paymentType === 'FULL_PAYMENT') {
+      hasAmount = !payment.fullPaymentPaid;
+      if (payment.fullPaymentDate && !payment.fullPaymentPaid) {
+        isOverdue = today > new Date(payment.fullPaymentDate);
+      }
+    } else if (payment.paymentType === 'INSTALLMENTS') {
+      if (!payment.firstInstallmentPaid) {
+        hasAmount = true;
+        if (payment.firstInstallmentDate) {
+          isOverdue = today > new Date(payment.firstInstallmentDate);
+        }
+      } else if (!payment.secondInstallmentPaid) {
+        hasAmount = true;
+        if (payment.secondInstallmentDate) {
+          isOverdue = today > new Date(payment.secondInstallmentDate);
+        }
+      }
+    } else if (payment.paymentType === 'PAY_LATER') {
+      hasAmount = payment.paymentStatus !== 'FULLY_PAID';
+      if (payment.paymentDueDate) {
+        isOverdue = today > new Date(payment.paymentDueDate);
+      }
+    }
+
+    if (isOverdue && hasAmount) {
+      overdueCount++;
+    }
+  });
+
+  return overdueCount;
+};
+
+export const getOverduePaymentsCount = async () => {
+  const { userId } = await auth();
+  const branchId = await getCurrentOrganizationBranchId();
+
+  if (!userId || !branchId) {
+    return 0;
+  }
+
+  return await _getOverduePaymentsCount(branchId);
 };
 
 export type Payment = Awaited<ReturnType<typeof getPayments>>[0];

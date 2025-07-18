@@ -14,7 +14,7 @@ export const getCurrentOrganizationBranchId = async () => {
   const { userId, orgId } = await auth();
 
   if (!userId || !orgId) {
-    throw new Error('User not authenticated or not in an organization');
+    return null;
   }
 
   return _getCurrentOrganizationBranchId(orgId);
@@ -32,7 +32,7 @@ export const getCurrentOrganizationBranch = async () => {
   const { userId, orgId } = await auth();
 
   if (!userId || !orgId) {
-    throw new Error('User not authenticated or not in an organization');
+    return null;
   }
 
   return _getCurrentOrganizationBranch(orgId);
@@ -42,7 +42,7 @@ export const getCurrentOrganizationTenantId = async () => {
   const { userId, orgId } = await auth();
 
   if (!userId || !orgId) {
-    throw new Error('User not authenticated or not in an organization');
+    return null;
   }
 
   const branch = await _getCurrentOrganizationBranch(orgId);

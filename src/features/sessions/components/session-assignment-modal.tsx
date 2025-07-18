@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Search, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, User } from 'lucide-react';
 import { getClientsWithUnassignedSessions } from '@/server/actions/clients';
 import type { ClientWithUnassignedSessions } from '@/server/db/client';
 
@@ -47,7 +48,7 @@ export const SessionAssignmentModal = ({
     setIsLoading(true);
     try {
       // Force fresh data by bypassing cache
-      const clientsData = await getClientsWithUnassignedSessions(true);
+      const clientsData = await getClientsWithUnassignedSessions();
       setClients(clientsData);
       setFilteredClients(clientsData);
     } catch (error) {
@@ -61,17 +62,12 @@ export const SessionAssignmentModal = ({
     onAssign(client.id);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw] max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Assign Session</h3>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-96 max-w-[90vw] max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Assign Session</DialogTitle>
+        </DialogHeader>
 
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-2">
@@ -129,7 +125,7 @@ export const SessionAssignmentModal = ({
             Cancel
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

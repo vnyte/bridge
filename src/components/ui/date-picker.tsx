@@ -48,7 +48,6 @@ export function DatePicker<TFieldValues extends FieldValues = FieldValues>({
       <ControlledDatePicker
         name={name as FieldPath<TFieldValues>}
         control={control}
-        placeholderText={placeholderText}
         disabled={disabled}
         className={className}
         minDate={minDate}
@@ -94,7 +93,7 @@ function ControlledDatePicker<TFieldValues extends FieldValues>({
   className,
   minDate,
   maxDate,
-}: Omit<DatePickerProps<TFieldValues>, 'selected' | 'onChange' | 'placeholderText'> & {
+}: Omit<DatePickerProps<TFieldValues>, 'selected' | 'onChange'> & {
   name: FieldPath<TFieldValues>;
   control: Control<TFieldValues>;
 }) {

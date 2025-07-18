@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { format, addDays, addMinutes } from 'date-fns';
+import { format, addDays, addMinutes, startOfWeek, endOfWeek } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -64,10 +64,12 @@ export const CalendarView = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{
     time: string;
     hour: number;
     minute: number;
+    date?: Date;
   } | null>(null);
 
   const { data: vehicles, isLoading } = useVehicles();
@@ -77,8 +79,15 @@ export const CalendarView = () => {
   console.log('Calendar - Selected vehicle:', selectedVehicle);
   console.log('Calendar - Sessions data:', sessions);
 
-  const getSessionForSlot = (timeSlot: { hour: number; minute: number }) => {
-    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  // Generate week dates for week view
+  const getWeekDates = () => {
+    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 }); // Sunday start
+    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  };
+
+  const getSessionForSlot = (timeSlot: { hour: number; minute: number }, date?: Date) => {
+    const targetDate = date || selectedDate;
+    const selectedDateStr = format(targetDate, 'yyyy-MM-dd');
 
     // Format the time slot in the same format as stored in the database (HH:MM:00)
     // Ensure hours and minutes are padded with leading zeros
@@ -142,6 +151,7 @@ export const CalendarView = () => {
   };
 
   const handleDeleteSession = async (session: Session) => {
+    console.log('Deleting session:', session);
     try {
       const result = await cancelSession(session.id);
 
@@ -193,12 +203,15 @@ export const CalendarView = () => {
     setIsEditingTime(false);
   };
 
-  const handleEmptySlotClick = (timeSlot: { time: string; hour: number; minute: number }) => {
+  const handleEmptySlotClick = (
+    timeSlot: { time: string; hour: number; minute: number },
+    date?: Date
+  ) => {
     if (!selectedVehicle) {
       alert('Please select a vehicle first');
       return;
     }
-    setSelectedTimeSlot(timeSlot);
+    setSelectedTimeSlot({ ...timeSlot, date: date || selectedDate });
     setIsAssignmentModalOpen(true);
   };
 
@@ -216,7 +229,7 @@ export const CalendarView = () => {
       const result = await assignSessionToSlot(
         clientId,
         selectedVehicle,
-        selectedDate,
+        selectedTimeSlot.date || selectedDate,
         startTime,
         endTime
       );
@@ -241,13 +254,13 @@ export const CalendarView = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div>
       <h1 className="text-2xl font-bold mb-6">Session Availability</h1>
 
       {/* Controls Row */}
       <div className="mb-6 flex items-end justify-between gap-4">
         {/* Vehicle Selector */}
-        <div className="w-64">
+        <div className="w-64 pt-4">
           <label className="block text-sm font-medium mb-2">Vehicle</label>
           <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
             <SelectTrigger>
@@ -273,76 +286,92 @@ export const CalendarView = () => {
           </Select>
         </div>
 
-        {/* Date Navigation */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+        {/* View Mode Selector and Date Navigation */}
+        <div className="flex items-center gap-4">
+          {/* View Mode Dropdown */}
+          <div className="w-32">
+            <Select value={viewMode} onValueChange={(value: 'day' | 'week') => setViewMode(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="min-w-[140px] justify-start text-left font-normal"
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                {format(selectedDate, 'dd/MM/yyyy')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  if (date) {
-                    setSelectedDate(date);
-                    setIsCalendarOpen(false);
-                  }
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          {/* Date Navigation */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(addDays(selectedDate, viewMode === 'week' ? -7 : -1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="min-w-[140px] justify-start text-left font-normal"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {viewMode === 'week'
+                    ? `${format(startOfWeek(selectedDate, { weekStartsOn: 0 }), 'dd MMM')} - ${format(endOfWeek(selectedDate, { weekStartsOn: 0 }), 'dd MMM yyyy')}`
+                    : format(selectedDate, 'dd/MM/yyyy')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setIsCalendarOpen(false);
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(addDays(selectedDate, viewMode === 'week' ? 7 : 1))}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="border rounded-lg overflow-hidden bg-white">
+      <div className="border overflow-hidden bg-white">
         {!selectedVehicle ? (
           <div className="p-8 text-center text-gray-500">
             <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium mb-2">Select a Vehicle</h3>
             <p>Please select a vehicle from the dropdown above to view its session availability.</p>
           </div>
-        ) : (
+        ) : viewMode === 'day' ? (
+          /* Day View */
           <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
             {timeSlots.map((timeSlot, timeIndex) => {
               const session = getSessionForSlot(timeSlot);
               return (
-                <div
-                  key={timeIndex}
-                  className="flex items-center border-b border-gray-100 min-h-[60px]"
-                >
+                <div key={timeIndex} className="flex items-center border-b border-gray-100 h-12">
                   {/* Time Column */}
                   <div className="w-24 p-4 text-sm text-gray-600 font-medium">{timeSlot.time}</div>
 
                   {/* Session Column */}
-                  <div className="flex-1">
+                  <div className="flex-1 h-full">
                     {session ? (
                       <div
-                        className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-6 rounded-lg transition-colors"
+                        className="flex items-center gap-3 px-4 cursor-pointer hover:bg-blue-50 transition-colors h-12"
                         onClick={() => handleSessionClick(session)}
                       >
                         {/* Avatar */}
@@ -369,24 +398,94 @@ export const CalendarView = () => {
                       </div>
                     ) : (
                       <div
-                        className="h-15 cursor-pointer hover:bg-blue-50 rounded-lg flex items-center justify-center text-gray-400 text-sm transition-colors border-2 border-dashed border-transparent hover:border-blue-300"
+                        className="h-12 cursor-pointer hover:bg-blue-50 flex items-center justify-center text-gray-400 text-sm transition-colors border-2 border-dashed border-transparent hover:border-blue-300"
                         onClick={() => handleEmptySlotClick(timeSlot)}
                         title="Click to assign a session"
-                      >
-                        + Assign Session
-                      </div>
+                      ></div>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
+        ) : (
+          /* Week View */
+          <div className="max-h-[calc(100vh-16rem)] overflow-auto">
+            {/* Week Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
+              <div className="flex">
+                <div className="w-20 p-2 text-sm font-medium text-gray-600 border-r"></div>
+                {getWeekDates().map((date, dayIndex) => (
+                  <div
+                    key={dayIndex}
+                    className="flex-1 p-2 text-center border-r border-gray-100 last:border-r-0"
+                  >
+                    <div className="text-xs text-gray-500 uppercase">{format(date, 'EEE')}</div>
+                    <div className="text-sm font-medium">{format(date, 'd')}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Slots */}
+            {timeSlots.map((timeSlot, timeIndex) => (
+              <div key={timeIndex} className="flex border-b border-gray-100">
+                {/* Time Column */}
+                <div className="w-20 p-2 text-xs text-gray-600 font-medium border-r border-gray-200 flex items-center">
+                  {format(new Date().setHours(timeSlot.hour, timeSlot.minute, 0, 0), 'h:mm a')}
+                </div>
+
+                {/* Day Columns */}
+                {getWeekDates().map((date, dayIndex) => {
+                  const session = getSessionForSlot(timeSlot, date);
+                  return (
+                    <div
+                      key={dayIndex}
+                      className="flex-1 h-12 border-r border-gray-100 last:border-r-0"
+                    >
+                      {session ? (
+                        <div
+                          className="h-full flex items-center gap-2 px-2 cursor-pointer hover:bg-blue-50 transition-colors"
+                          onClick={() => handleSessionClick(session)}
+                        >
+                          <div
+                            className={cn(
+                              'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium',
+                              getAvatarColor(session.clientName)
+                            )}
+                          >
+                            {session.clientName
+                              .split(' ')
+                              .map((n) => n[0])
+                              .join('')
+                              .toUpperCase()}
+                          </div>
+                          <span className="text-xs font-medium text-gray-900 truncate">
+                            {session.clientName}
+                          </span>
+                        </div>
+                      ) : (
+                        <div
+                          className="h-full cursor-pointer hover:bg-blue-50 transition-colors border-2 border-dashed border-transparent hover:border-blue-300"
+                          onClick={() => handleEmptySlotClick(timeSlot, date)}
+                          title="Click to assign a session"
+                        ></div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
       {/* Session Detail Modal */}
       <Dialog open={!!selectedSession} onOpenChange={(open) => !open && closeSessionModal()}>
-        <DialogContent className="w-96 max-w-[90vw]">
+        <DialogContent
+          className="w-96 max-w-[90vw]"
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Session Details</DialogTitle>
           </DialogHeader>
@@ -396,7 +495,7 @@ export const CalendarView = () => {
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center text-white font-medium',
+                    'w-10 h-10 flex rounded-full items-center justify-center text-white font-medium',
                     getAvatarColor(selectedSession.clientName)
                   )}
                 >
@@ -464,7 +563,7 @@ export const CalendarView = () => {
         onClose={closeAssignmentModal}
         onAssign={handleSessionAssignment}
         timeSlot={selectedTimeSlot?.time || ''}
-        date={selectedDate}
+        date={selectedTimeSlot?.date || selectedDate}
       />
     </div>
   );

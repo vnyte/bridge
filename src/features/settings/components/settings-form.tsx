@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +24,7 @@ interface SettingsFormProps {
 }
 
 export const SettingsForm = ({ branchId, initialData }: SettingsFormProps) => {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   const form = useForm<BranchSettings>({
     resolver: zodResolver(branchSettingsSchema),
@@ -52,19 +52,20 @@ export const SettingsForm = ({ branchId, initialData }: SettingsFormProps) => {
     setValue('workingDays', newDays);
   };
 
-  const onSubmit = (data: BranchSettings) => {
-    startTransition(async () => {
-      try {
-        const result = await updateBranchSettings(branchId, data);
-        if (result.success) {
-          toast.success('Settings updated successfully');
-        } else {
-          toast.error(result.error || 'Failed to update settings');
-        }
-      } catch {
-        toast.error('An unexpected error occurred');
+  const onSubmit = async (data: BranchSettings) => {
+    setIsPending(true);
+    try {
+      const result = await updateBranchSettings(branchId, data);
+      if (result.success) {
+        toast.success('Settings updated successfully');
+      } else {
+        toast.error(result.error || 'Failed to update settings');
       }
-    });
+    } catch {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (

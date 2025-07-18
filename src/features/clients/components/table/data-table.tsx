@@ -19,7 +19,17 @@ interface DataTableProps<TData, TValue> {
 }
 
 // Define available column keys
-const availableColumns = ['name', 'phoneNumber', 'email', 'location', 'paymentStatus', 'createdAt'];
+const availableColumns = [
+  'name',
+  'phoneNumber',
+  'email',
+  'location',
+  'paymentStatus',
+  'remainingSessions',
+  'unassignedSessions',
+  'completionStatus',
+  'createdAt',
+];
 
 export function ClientDataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
   const router = useRouter();

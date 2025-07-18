@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTransition } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -38,36 +38,37 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
     },
   });
 
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  function onSubmit(values: z.infer<typeof vehicleFormSchema>) {
-    startTransition(async () => {
-      try {
-        let result;
+  async function onSubmit(values: z.infer<typeof vehicleFormSchema>) {
+    setIsPending(true);
+    try {
+      let result;
 
-        if (vehicle?.id) {
-          // Update existing vehicle
-          result = await updateVehicle(vehicle.id, values);
-        } else {
-          // Create new vehicle
-          result = await addVehicle(values);
-        }
-
-        if (result.error) {
-          toast.error(result.message || 'Failed to process vehicle data');
-        } else {
-          toast.success(result.message);
-          if (!vehicle?.id) {
-            form.reset();
-            router.push('/vehicles');
-          }
-        }
-      } catch (error) {
-        console.log(error);
-        toast.error('Something went wrong');
+      if (vehicle?.id) {
+        // Update existing vehicle
+        result = await updateVehicle(vehicle.id, values);
+      } else {
+        // Create new vehicle
+        result = await addVehicle(values);
       }
-    });
+
+      if (result.error) {
+        toast.error(result.message || 'Failed to process vehicle data');
+      } else {
+        toast.success(result.message);
+        if (!vehicle?.id) {
+          form.reset();
+          router.push('/vehicles');
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error('Something went wrong');
+    } finally {
+      setIsPending(false);
+    }
   }
 
   return (

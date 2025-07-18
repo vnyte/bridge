@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 interface PopConfirmProps {
   children: React.ReactNode;
@@ -32,6 +31,8 @@ export function PopConfirm({
 }: PopConfirmProps) {
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [triggerRect, setTriggerRect] = React.useState<DOMRect | null>(null);
+  const triggerRef = React.useRef<HTMLDivElement>(null);
 
   const handleConfirm = async () => {
     if (!onConfirm) return;
@@ -54,50 +55,73 @@ export function PopConfirm({
     setOpen(false);
   };
 
+  const handleTriggerClick = () => {
+    if (disabled) return;
+
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      setTriggerRect(rect);
+      setOpen(true);
+    }
+  };
+
   const defaultIcon = (
     <div className="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
       !
     </div>
   );
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
-        {children}
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start">
-        <div className="p-4">
-          <div className="flex items-start gap-3 mb-4">
-            {icon || defaultIcon}
-            <div className="flex-1">
-              <div className="font-medium text-sm mb-1">{title}</div>
-              {description && <div className="text-sm text-muted-foreground">{description}</div>}
-            </div>
-          </div>
-          <div className="flex justify-between gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              disabled={loading}
-              className="h-8 px-3"
-            >
-              {cancelText}
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleConfirm}
-              disabled={loading}
-              className={cn(
-                'h-8 px-3',
-                variant === 'destructive' && 'bg-blue-500 hover:bg-blue-600 text-white'
-              )}
-            >
-              {loading ? '...' : confirmText}
-            </Button>
+  const popoverContent =
+    open && triggerRect ? (
+      <div
+        className="fixed bg-white border rounded-lg shadow-lg p-4 w-80"
+        style={{
+          zIndex: 10000,
+          left: triggerRect.left,
+          top: triggerRect.bottom + 4,
+          pointerEvents: 'auto',
+        }}
+      >
+        <div className="flex items-start gap-3 mb-4">
+          {icon || defaultIcon}
+          <div className="flex-1">
+            <div className="font-medium text-sm mb-1">{title}</div>
+            {description && <div className="text-sm text-muted-foreground">{description}</div>}
           </div>
         </div>
-      </PopoverContent>
-    </Popover>
+        <div className="flex justify-between gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCancel}
+            disabled={loading}
+            className="h-8 px-3"
+            style={{ pointerEvents: 'auto' }}
+          >
+            {cancelText}
+          </Button>
+          <Button
+            size="sm"
+            variant={variant}
+            onClick={handleConfirm}
+            disabled={loading}
+            className="h-8 px-3"
+            style={{ pointerEvents: 'auto' }}
+          >
+            {loading ? '...' : confirmText}
+          </Button>
+        </div>
+      </div>
+    ) : null;
+
+  return (
+    <>
+      <div ref={triggerRef} onClick={handleTriggerClick} className="inline-block">
+        {children}
+      </div>
+      {typeof window !== 'undefined' &&
+        popoverContent &&
+        createPortal(popoverContent, document.body)}
+    </>
   );
 }

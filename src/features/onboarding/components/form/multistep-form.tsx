@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useForm, SubmitHandler, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SchoolNameStep from './steps/school-name';
@@ -10,7 +10,9 @@ import React from 'react';
 import { onboardingFormSchema, OnboardingFormValues } from '../types';
 import { createTenant } from '../../server/action';
 import { toast } from 'sonner';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useClerk } from '@clerk/nextjs';
+import { useOrganizationList } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { CompletionScreen } from '../completion-screen';
 import { SuccessScreen } from '../success-screen';
 
@@ -56,8 +58,11 @@ export const MultistepForm = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const currentStepKey = stepOrder[currentStepIndex];
   const currentStep = steps[currentStepKey];
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const { getToken } = useAuth();
+  const { setActive } = useClerk();
+  const { userMemberships } = useOrganizationList();
+  const router = useRouter();
 
   // Completion flow state
   const [showCompletion, setShowCompletion] = useState(false);
@@ -66,21 +71,26 @@ export const MultistepForm = () => {
   // Handle form submission
   const onSubmit: SubmitHandler<OnboardingFormValues> = async (data) => {
     setShowCompletion(true);
+    setIsPending(true);
 
-    startTransition(async () => {
+    try {
       const response = await createTenant(data);
-      await getToken({
-        skipCache: true,
-      });
-
-      if (!response?.error) {
-        // Success handled by completion flow
-      } else {
+      if (response?.error) {
         // On error, hide completion and show error
         setShowCompletion(false);
-        toast.error('Something went wrong. Please try again.');
+        toast.error(response.message);
+      } else {
+        // On success, proceed to completion flow
+        setShowCompletion(false);
+        setShowSuccess(true);
       }
-    });
+    } catch (error) {
+      console.error('Error creating tenant:', error);
+      setShowCompletion(false);
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   // Handle completion flow
@@ -89,8 +99,20 @@ export const MultistepForm = () => {
     setShowSuccess(true);
   };
 
-  const handleRedirectToDashboard = () => {
-    window.location.href = '/dashboard';
+  const handleRedirectToDashboard = async () => {
+    // Refresh the session to ensure latest metadata is loaded
+    await getToken({ skipCache: true });
+
+    // Ensure organization is selected before redirecting
+    if (userMemberships.data?.length) {
+      await setActive({ organization: userMemberships.data[0].organization.id });
+    }
+
+    // Add delay to ensure metadata propagation and organization context is set
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Use Next.js router instead of window.location
+    router.push('/dashboard');
   };
 
   // Handle next step

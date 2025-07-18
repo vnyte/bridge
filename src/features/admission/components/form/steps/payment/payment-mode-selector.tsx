@@ -11,9 +11,23 @@ import { AdmissionFormValues } from '@/features/admission/types';
 import { toast } from 'sonner';
 
 export const PaymentModeSelector = () => {
-  const { getValues } = useFormContext<AdmissionFormValues>();
+  const { getValues, setValue } = useFormContext<AdmissionFormValues>();
+
+  // Initialize payment mode from existing form data
+  const getInitialPaymentMode = () => {
+    const payment = getValues().payment;
+    const paymentType = payment?.paymentType || 'FULL_PAYMENT';
+
+    if (paymentType === 'FULL_PAYMENT') {
+      return payment?.fullPaymentMode || 'PAYMENT_LINK';
+    } else if (paymentType === 'INSTALLMENTS') {
+      return payment?.firstPaymentMode || 'PAYMENT_LINK';
+    }
+    return 'PAYMENT_LINK';
+  };
+
   const [paymentMode, setPaymentMode] =
-    useState<(typeof PaymentModeEnum.enumValues)[number]>('PAYMENT_LINK');
+    useState<(typeof PaymentModeEnum.enumValues)[number]>(getInitialPaymentMode());
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(getValues().personalInfo?.phoneNumber);
 
@@ -30,9 +44,36 @@ export const PaymentModeSelector = () => {
           <FormLabel>Payment Mode</FormLabel>
           <RadioGroup
             value={paymentMode}
-            onValueChange={(value) =>
-              setPaymentMode(value as (typeof PaymentModeEnum.enumValues)[number])
-            }
+            onValueChange={(value) => {
+              const newMode = value as (typeof PaymentModeEnum.enumValues)[number];
+              setPaymentMode(newMode);
+              // Update the form value based on payment type
+              const paymentType = getValues().payment?.paymentType || 'FULL_PAYMENT';
+              if (paymentType === 'FULL_PAYMENT') {
+                setValue('payment.fullPaymentMode', newMode);
+                // Auto-update payment status for cash payments
+                if (newMode === 'CASH') {
+                  setValue('payment.paymentStatus', 'FULLY_PAID');
+                  setValue('payment.fullPaymentPaid', true);
+                } else {
+                  setValue('payment.paymentStatus', 'PENDING');
+                  setValue('payment.fullPaymentPaid', false);
+                }
+              } else if (paymentType === 'INSTALLMENTS') {
+                setValue('payment.firstPaymentMode', newMode);
+                setValue('payment.secondPaymentMode', newMode);
+                // Auto-update payment status for cash installments
+                if (newMode === 'CASH') {
+                  setValue('payment.paymentStatus', 'FULLY_PAID');
+                  setValue('payment.firstInstallmentPaid', true);
+                  setValue('payment.secondInstallmentPaid', true);
+                } else {
+                  setValue('payment.paymentStatus', 'PENDING');
+                  setValue('payment.firstInstallmentPaid', false);
+                  setValue('payment.secondInstallmentPaid', false);
+                }
+              }
+            }}
             className="flex gap-5 items-center"
           >
             {PaymentModeEnum.enumValues.map((mode) => (

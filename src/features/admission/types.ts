@@ -10,14 +10,14 @@ import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
 import { PlanTable } from '@/db/schema/plan/columns';
 import { LicenseClassEnum } from '@/db/schema/enums';
-import { PaymentModeEnum, PaymentTable, PaymentTypeEnum } from '@/db/schema';
+import { PaymentModeEnum, PaymentTable, PaymentTypeEnum, PaymentStatusEnum } from '@/db/schema';
 
 // Create schemas directly from database tables
 export const personalInfoSchema = createInsertSchema(ClientTable, {
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phoneNumber: z.string().min(1, 'Phone number is required'),
-  email: z.string().email('Invalid email address').optional().nullable(),
+  email: z.string().email('Invalid email address').or(z.literal('')).optional().nullable(),
 
   birthDate: z.date().min(new Date('1900-01-01'), 'Invalid birth date'),
   bloodGroup: z.enum(BloodGroupEnum.enumValues, {
@@ -53,6 +53,7 @@ export const learningLicenseSchema = createInsertSchema(LearningLicenseTable, {
   issueDate: z.date().min(new Date('1900-01-01'), 'Invalid issue date').optional().nullable(),
   expiryDate: z.date().min(new Date('1900-01-01'), 'Invalid expiry date').optional().nullable(),
   applicationNumber: z.string().optional().nullable(),
+  clientId: z.string().optional(), // Make clientId optional since it's added by the server action
 });
 
 export const drivingLicenseSchema = createInsertSchema(DrivingLicenseTable, {
@@ -72,6 +73,7 @@ export const drivingLicenseSchema = createInsertSchema(DrivingLicenseTable, {
   imv: z.string().optional().nullable(),
   rto: z.string().optional().nullable(),
   department: z.string().optional().nullable(),
+  clientId: z.string().optional(), // Make clientId optional since it's added by the server action
 });
 
 export const planSchema = createInsertSchema(PlanTable, {
@@ -86,6 +88,9 @@ export const paymentSchema = createInsertSchema(PaymentTable, {
   paymentType: z
     .enum(PaymentTypeEnum.enumValues, { required_error: 'Payment type is required' })
     .default('FULL_PAYMENT'),
+  paymentStatus: z
+    .enum(PaymentStatusEnum.enumValues, { required_error: 'Payment status is required' })
+    .default('PENDING'),
   fullPaymentDate: z.string().nullable().optional(),
   fullPaymentMode: z
     .enum(PaymentModeEnum.enumValues, { required_error: 'Payment mode is required' })

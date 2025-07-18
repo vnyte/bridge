@@ -18,6 +18,8 @@ export type Client = {
   paymentStatus?: 'PENDING' | 'PARTIALLY_PAID' | 'FULLY_PAID' | null;
   remainingSessions: number;
   unassignedSessions: number;
+  isComplete: boolean;
+  completionStatus: 'COMPLETE' | 'INCOMPLETE';
 };
 
 const getPaymentStatusBadge = (status?: string | null) => {
@@ -35,6 +37,14 @@ const getPaymentStatusBadge = (status?: string | null) => {
     default:
       return <Badge variant="secondary">No Payment</Badge>;
   }
+};
+
+const getCompletionStatusBadge = (isComplete: boolean) => {
+  return isComplete ? (
+    <Badge variant="default">Complete</Badge>
+  ) : (
+    <Badge variant="destructive">Incomplete</Badge>
+  );
 };
 
 export const columns: ColumnDef<Client>[] = [
@@ -86,6 +96,13 @@ export const columns: ColumnDef<Client>[] = [
     cell: ({ row }) => {
       const unassigned = row.original.unassignedSessions;
       return <Badge variant={unassigned > 0 ? 'destructive' : 'secondary'}>{unassigned}</Badge>;
+    },
+  },
+  {
+    accessorKey: 'completionStatus',
+    header: 'Status',
+    cell: ({ row }) => {
+      return getCompletionStatusBadge(row.original.isComplete);
     },
   },
   {

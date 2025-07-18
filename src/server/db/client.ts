@@ -1,5 +1,12 @@
 import { db } from '@/db';
-import { ClientTable, PaymentTable, SessionTable } from '@/db/schema';
+import {
+  ClientTable,
+  PaymentTable,
+  SessionTable,
+  LearningLicenseTable,
+  DrivingLicenseTable,
+  PlanTable,
+} from '@/db/schema';
 import { auth } from '@clerk/nextjs/server';
 import { eq, ilike, and, desc, or, count } from 'drizzle-orm';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
@@ -27,9 +34,16 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
       state: ClientTable.state,
       createdAt: ClientTable.createdAt,
       paymentStatus: PaymentTable.paymentStatus,
+      hasLearningLicense: LearningLicenseTable.id,
+      hasDrivingLicense: DrivingLicenseTable.id,
+      hasPlan: PlanTable.id,
+      hasPayment: PaymentTable.id,
     })
     .from(ClientTable)
     .leftJoin(PaymentTable, eq(ClientTable.id, PaymentTable.clientId))
+    .leftJoin(LearningLicenseTable, eq(ClientTable.id, LearningLicenseTable.clientId))
+    .leftJoin(DrivingLicenseTable, eq(ClientTable.id, DrivingLicenseTable.clientId))
+    .leftJoin(PlanTable, eq(ClientTable.id, PlanTable.clientId))
     .where(and(...conditions))
     .orderBy(desc(ClientTable.createdAt));
 
@@ -54,10 +68,17 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
         .from(SessionTable)
         .where(and(eq(SessionTable.clientId, client.id), eq(SessionTable.status, 'CANCELLED')));
 
+      // Determine completion status
+      // A client is complete if they have at least a plan and payment
+      // Licenses are optional but plan and payment are required
+      const isComplete = !!(client.hasPlan && client.hasPayment);
+
       return {
         ...client,
         remainingSessions: remainingSessions[0]?.count || 0,
         unassignedSessions: unassignedSessions[0]?.count || 0,
+        isComplete,
+        completionStatus: isComplete ? ('COMPLETE' as const) : ('INCOMPLETE' as const),
       };
     })
   );
@@ -151,6 +172,7 @@ export const getClientsWithUnassignedSessions = async () => {
 };
 
 export type Client = Awaited<ReturnType<typeof getClients>>[0];
+export type ClientDetail = Awaited<ReturnType<typeof getClient>>;
 export type ClientWithUnassignedSessions = Awaited<
   ReturnType<typeof getClientsWithUnassignedSessions>
 >[0];
