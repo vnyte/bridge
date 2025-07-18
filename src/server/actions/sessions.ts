@@ -6,6 +6,8 @@ import {
   updateSession as updateSessionInDB,
   cancelSession as cancelSessionInDB,
   assignSessionToSlot as assignSessionToSlotInDB,
+  getSessionsByClientId as getSessionsByClientIdFromDB,
+  updateScheduledSessionsForClient as updateScheduledSessionsForClientInDB,
 } from '@/server/db/sessions';
 
 export const getSessions = async (vehicleId?: string) => {
@@ -45,7 +47,7 @@ export const updateSession = async (
   updates: {
     startTime?: string;
     endTime?: string;
-    status?: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED';
+    status?: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED' | 'RESCHEDULED';
   }
 ) => {
   try {
@@ -66,10 +68,11 @@ export const updateSession = async (
 
 export const cancelSession = async (sessionId: string) => {
   try {
-    await cancelSessionInDB(sessionId);
+    const cancelledSession = await cancelSessionInDB(sessionId);
     return {
       error: false,
       message: 'Session cancelled successfully',
+      data: cancelledSession,
     };
   } catch (error) {
     console.error('Error cancelling session:', error);
@@ -77,6 +80,16 @@ export const cancelSession = async (sessionId: string) => {
       error: true,
       message: 'Failed to cancel session',
     };
+  }
+};
+
+export const getSessionsByClientId = async (clientId: string) => {
+  try {
+    const sessions = await getSessionsByClientIdFromDB(clientId);
+    return sessions;
+  } catch (error) {
+    console.error('Error getting sessions by client ID:', error);
+    return [];
   }
 };
 
@@ -105,6 +118,32 @@ export const assignSessionToSlot = async (
     return {
       error: true,
       message: error instanceof Error ? error.message : 'Failed to assign session',
+    };
+  }
+};
+
+export const updateScheduledSessionsForClient = async (
+  clientId: string,
+  newSessions: Array<{
+    sessionDate: Date;
+    startTime: string;
+    endTime: string;
+    vehicleId: string;
+    sessionNumber: number;
+  }>
+) => {
+  try {
+    const result = await updateScheduledSessionsForClientInDB(clientId, newSessions);
+    return {
+      error: false,
+      message: `Sessions updated: ${result.updated} updated, ${result.created} created, ${result.deleted} deleted`,
+      data: result,
+    };
+  } catch (error) {
+    console.error('Error updating sessions:', error);
+    return {
+      error: true,
+      message: error instanceof Error ? error.message : 'Failed to update sessions',
     };
   }
 };

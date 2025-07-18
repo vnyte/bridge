@@ -114,7 +114,17 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         vehicleId: client.plan?.[0]?.vehicleId || '',
         numberOfSessions: client.plan?.[0]?.numberOfSessions || 21,
         sessionDurationInMinutes: client.plan?.[0]?.sessionDurationInMinutes || 30,
-        joiningDate: client.plan?.[0]?.joiningDate || new Date(),
+        joiningDate: (() => {
+          const plan = client.plan?.[0];
+          if (plan?.joiningDate && plan?.joiningTime) {
+            // Combine joiningDate and joiningTime into a single DateTime
+            const date = new Date(plan.joiningDate);
+            const [hours, minutes] = plan.joiningTime.split(':').map(Number);
+            date.setHours(hours, minutes, 0, 0);
+            return date;
+          }
+          return new Date();
+        })(),
       },
       payment: {
         discount: client.payments?.[0]?.discount || 0,
@@ -317,7 +327,7 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
       }),
     },
     plan: {
-      component: <PlanStep branchConfig={branchConfig} />,
+      component: <PlanStep branchConfig={branchConfig} currentClientId={client.id} />,
       onSubmit: (data: unknown) => handlePlanStep(data as PlanValues),
       getData: () => getValues('plan'),
     },
@@ -397,8 +407,12 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
             position: 'top-right',
           });
 
-          if (isLastStep) {
+          // Refresh page data for plan and payment steps to get updated data
+          if (currentStepKey === 'plan' || currentStepKey === 'payment') {
             router.refresh();
+          }
+
+          if (isLastStep) {
             router.push('/clients');
           } else {
             goToNext();

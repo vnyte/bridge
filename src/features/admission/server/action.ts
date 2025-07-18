@@ -33,7 +33,11 @@ import { VehicleTable } from '@/db/schema/vehicles/columns';
 import { ClientTable } from '@/db/schema/client/columns';
 import { calculatePaymentAmounts } from '@/lib/payment/calculate';
 import { generateSessionsFromPlan } from '@/lib/sessions';
-import { createSessions } from '@/server/actions/sessions';
+import {
+  createSessions,
+  getSessionsByClientId,
+  updateScheduledSessionsForClient,
+} from '@/server/actions/sessions';
 
 export const createClient = async (
   unsafeData: z.infer<typeof personalInfoSchema>
@@ -235,16 +239,135 @@ export const createPlan = async (
       return { error: true, message: 'Invalid plan data' };
     }
 
-    // Create or update the plan with separated date and time
-    const { isExistingPlan, planId } = await upsertPlanInDB({
+    // Check if there's an existing plan for this client
+    let existingPlan = null;
+    if (data.id) {
+      // If we have a plan ID, fetch the existing plan details
+      existingPlan = await db.query.PlanTable.findFirst({
+        where: eq(PlanTable.id, data.id),
+      });
+    } else {
+      // Otherwise, try to find a plan by client ID
+      existingPlan = await db.query.PlanTable.findFirst({
+        where: eq(PlanTable.clientId, data.clientId),
+      });
+    }
+
+    // Check if the plan timing has changed
+    let planTimingChanged = false;
+    if (existingPlan) {
+      const existingDate = existingPlan.joiningDate ? new Date(existingPlan.joiningDate) : null;
+      const existingTime = existingPlan.joiningTime;
+
+      // Check if date or time has changed
+      if (existingDate && existingTime) {
+        const formattedExistingDate = existingDate.toISOString().split('T')[0];
+        const formattedNewDate = joiningDateTime.toISOString().split('T')[0];
+
+        planTimingChanged =
+          formattedExistingDate !== formattedNewDate ||
+          existingTime !== timeString ||
+          existingPlan.vehicleId !== data.vehicleId ||
+          existingPlan.numberOfSessions !== data.numberOfSessions;
+      }
+    }
+
+    // Make sure we're explicitly passing the joiningDate and joiningTime for update
+    const planData = {
       ...parseResult.data,
-      joiningTime: timeString,
-    });
+      joiningDate: data.joiningDate, // Explicitly pass the joiningDate
+      joiningTime: timeString, // Explicitly pass the formatted time
+    };
+
+    // Create or update the plan with separated date and time
+    const { isExistingPlan, planId } = await upsertPlanInDB(planData);
+
+    // Check if sessions already exist for this client
+    const existingSessions = await getSessionsByClientId(data.clientId);
+
+    // Determine if we need to regenerate sessions
+    const shouldGenerateSessions =
+      !isExistingPlan || // New plan
+      existingSessions.length === 0 || // No existing sessions
+      (isExistingPlan && planTimingChanged); // Plan timing changed
+
+    let sessionMessage = '';
+
+    if (shouldGenerateSessions) {
+      // Get client details for session generation
+      const clientDetails = await db.query.ClientTable.findFirst({
+        where: eq(ClientTable.id, data.clientId),
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      });
+
+      if (!clientDetails) {
+        return { error: true, message: 'Client not found' };
+      }
+
+      // Get branch configuration
+      const branchConfigResult = await getBranchConfig();
+      if (branchConfigResult.error || !branchConfigResult.data) {
+        return { error: true, message: 'Failed to get branch configuration' };
+      }
+
+      // Generate sessions from plan data
+      const sessionsToGenerate = generateSessionsFromPlan(
+        {
+          joiningDate: data.joiningDate,
+          joiningTime: timeString,
+          numberOfSessions: data.numberOfSessions,
+          vehicleId: data.vehicleId,
+        },
+        {
+          id: clientDetails.id,
+          firstName: clientDetails.firstName,
+          lastName: clientDetails.lastName,
+        },
+        branchConfigResult.data
+      );
+
+      if (sessionsToGenerate.length > 0) {
+        if (isExistingPlan && planTimingChanged && existingSessions.length > 0) {
+          // Update existing sessions instead of creating duplicates
+          const updateResult = await updateScheduledSessionsForClient(
+            data.clientId,
+            sessionsToGenerate.map((session) => ({
+              sessionDate: session.sessionDate,
+              startTime: session.startTime,
+              endTime: session.endTime,
+              vehicleId: session.vehicleId,
+              sessionNumber: session.sessionNumber,
+            }))
+          );
+
+          if (updateResult.error) {
+            console.error('Failed to update sessions:', updateResult.message);
+            sessionMessage = ' but session update failed';
+          } else {
+            sessionMessage = ' and sessions updated';
+          }
+        } else {
+          // Create new sessions for new plans
+          const createResult = await createSessions(sessionsToGenerate);
+          if (createResult.error) {
+            console.error('Failed to create sessions:', createResult.message);
+            sessionMessage = ' but session creation failed';
+          } else {
+            sessionMessage = ' and sessions generated';
+          }
+        }
+      }
+    }
 
     const action = isExistingPlan ? 'updated' : 'created';
+
     return {
       error: false,
-      message: `Plan ${action} successfully`,
+      message: `Plan ${action} successfully${sessionMessage}`,
       planId,
     };
   } catch (error) {
@@ -537,6 +660,7 @@ export const updateDrivingLicense = async (
 };
 
 export const updatePlan = async (_planId: string, data: PlanValues): ActionReturnType => {
+  // When updating a plan, we'll use the same createPlan function which now handles session generation
   return createPlan(data);
 };
 

@@ -55,9 +55,10 @@ interface PlanStepProps {
     workingDays: number[];
     operatingHours: { start: string; end: string };
   };
+  currentClientId?: string; // For highlighting existing client sessions
 }
 
-export const PlanStep = ({ branchConfig }: PlanStepProps) => {
+export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
   const { control, watch, setValue } = useFormContext<AdmissionFormValues>();
   const { data: vehicles, isLoading } = useVehicles();
   const [slotConflict, setSlotConflict] = useState<{
@@ -69,6 +70,7 @@ export const PlanStep = ({ branchConfig }: PlanStepProps) => {
 
   const selectedVehicleId = watch('plan.vehicleId');
   const selectedDateTime = watch('plan.joiningDate');
+  const numberOfSessions = watch('plan.numberOfSessions');
 
   const checkSlotAvailability = useCallback(
     async (vehicleId: string, dateTime: Date) => {
@@ -320,6 +322,8 @@ export const PlanStep = ({ branchConfig }: PlanStepProps) => {
           vehicleId={selectedVehicleId}
           selectedDate={selectedDateTime}
           branchConfig={branchConfig}
+          currentClientId={currentClientId}
+          numberOfSessions={numberOfSessions || 1}
           onTimeSelect={(timeValue: string) => {
             // Update the form with the selected time
             const [hours, minutes] = timeValue.split(':').map(Number);

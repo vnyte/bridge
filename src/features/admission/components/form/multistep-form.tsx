@@ -313,7 +313,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
       }),
     },
     plan: {
-      component: <PlanStep branchConfig={branchConfig} />,
+      component: <PlanStep branchConfig={branchConfig} currentClientId={undefined} />,
       onSubmit: (data: unknown) => handlePlanStep(data as PlanValues),
       getData: () => getValues('plan'),
     },

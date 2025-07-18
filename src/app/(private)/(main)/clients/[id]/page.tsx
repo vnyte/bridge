@@ -23,8 +23,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     <div className="container mx-auto py-6">
       <div className="mb-6">
         <Link href="/clients">
-          <Button variant="link" size="sm" className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <Button variant="link" size="sm" className="mb-4 !px-0">
+            <ArrowLeft className="w-4 h-4" />
             Back to Clients
           </Button>
         </Link>
