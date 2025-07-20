@@ -5,6 +5,7 @@ import {
   BloodGroupEnum,
   GenderEnum,
   CitizenStatusEnum,
+  EducationalQualificationEnum,
 } from '@/db/schema/client/columns';
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
@@ -14,6 +15,8 @@ import { PaymentModeEnum, PaymentTable, PaymentTypeEnum, PaymentStatusEnum } fro
 
 // Create schemas directly from database tables
 export const personalInfoSchema = createInsertSchema(ClientTable, {
+  aadhaarNumber: z.string().min(12, 'Aadhaar number must be 12 digits').max(12, 'Aadhaar number must be 12 digits').regex(/^\d{12}$/, 'Aadhaar number must contain only digits'),
+  panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format (e.g., ABCDE1234F)').optional().nullable().or(z.literal('')),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phoneNumber: z.string().min(1, 'Phone number is required'),
@@ -26,6 +29,7 @@ export const personalInfoSchema = createInsertSchema(ClientTable, {
   gender: z.enum(GenderEnum.enumValues, {
     required_error: 'Gender is required',
   }),
+  educationalQualification: z.enum(EducationalQualificationEnum.enumValues).optional().nullable(),
 
   address: z.string().min(1, 'Address is required'),
   city: z.string().min(1, 'City is required'),

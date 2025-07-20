@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
-import { BloodGroupEnum, GenderEnum, CitizenStatusEnum } from '@/db/schema/client/columns';
+import { BloodGroupEnum, GenderEnum, CitizenStatusEnum, EducationalQualificationEnum } from '@/db/schema/client/columns';
 import { TypographyH5, TypographyP } from '@/components/ui/typography';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useEffect } from 'react';
@@ -88,6 +88,47 @@ export const PersonalInfoStep = () => {
         <TypographyH5 className="col-span-3">Personal Details</TypographyH5>
 
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
+          <FormField
+            control={control}
+            name="personalInfo.aadhaarNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel required>Aadhaar Number</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="123456789012" 
+                    value={field.value || ''} 
+                    onChange={field.onChange}
+                    maxLength={12}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="personalInfo.panNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>PAN Number</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="ABCDE1234F" 
+                    value={field.value || ''} 
+                    onChange={field.onChange}
+                    maxLength={10}
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div /> {/* Empty div to maintain grid layout */}
+
           <FormField
             control={control}
             name="personalInfo.firstName"
@@ -237,6 +278,34 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={control}
+            name="personalInfo.educationalQualification"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Educational Qualification</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select qualification" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="BELOW_10TH">Below 10th</SelectItem>
+                    <SelectItem value="CLASS_10TH">10th Pass</SelectItem>
+                    <SelectItem value="CLASS_12TH">12th Pass</SelectItem>
+                    <SelectItem value="GRADUATE">Graduate</SelectItem>
+                    <SelectItem value="POST_GRADUATE">Post Graduate</SelectItem>
+                    <SelectItem value="OTHERS">Others</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div /> {/* Empty div to maintain grid layout */}
         </div>
       </div>
 

@@ -121,6 +121,83 @@
   }
 }
 
+/* Print styles for A4 forms */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  
+  /* Hide everything except the form content when printing */
+  body > *:not(.print-container) {
+    display: none !important;
+  }
+  
+  /* Hide modal overlay and background */
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-portal"],
+  .bg-gray-100 {
+    display: none !important;
+  }
+  
+  /* Show only the form content */
+  .print-content {
+    display: block !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 20mm !important;
+    box-sizing: border-box !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  /* Hide dialog header when printing */
+  [data-slot="dialog-header"] {
+    display: none !important;
+  }
+  
+  /* Ensure tables and borders print correctly */
+  table {
+    border-collapse: collapse !important;
+  }
+  
+  table, th, td {
+    border: 1px solid black !important;
+  }
+  
+  /* Ensure checkboxes print */
+  input[type="checkbox"] {
+    -webkit-appearance: checkbox !important;
+    appearance: checkbox !important;
+  }
+  
+  /* Prevent page breaks within important sections */
+  .no-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Force page breaks when needed */
+  .page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+}
+
 @layer base {
   :root {
     --background: oklch(1 0 0);

@@ -35,7 +35,7 @@ const _getSessions = async (branchId: string, vehicleId?: string, clientId?: str
 
   const result = sessions.map((session) => ({
     ...session,
-    clientName: `${session.client.firstName} ${session.client.lastName}`,
+    clientName: `${session.client?.firstName} ${session.client?.lastName}`,
   }));
 
   console.log(`Found ${result.length} sessions for vehicle ${vehicleId || 'all'}`);

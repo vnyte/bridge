@@ -67,6 +67,7 @@ Clerk organizations map to tenant branches. User access controlled by organizati
 - Prettier formatting
 - ESLint rules
 - Import sorting (@ianvs/prettier-plugin-sort-imports)
+- Always use types over interfaces
 
 Follow existing patterns for:
 

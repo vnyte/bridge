@@ -20,6 +20,15 @@ export const CitizenStatusEnum = pgEnum('citizen_status', [
   'REGISTRATION',
 ]);
 
+export const EducationalQualificationEnum = pgEnum('educational_qualification', [
+  'BELOW_10TH',
+  'CLASS_10TH',
+  'CLASS_12TH',
+  'GRADUATE',
+  'POST_GRADUATE',
+  'OTHERS',
+]);
+
 export const ClientTable = pgTable(
   'clients',
   {
@@ -28,6 +37,9 @@ export const ClientTable = pgTable(
     middleName: text('middle_name'),
     lastName: text('last_name').notNull(),
     clientCode: text('client_code').notNull(),
+
+    aadhaarNumber: text('aadhaar_number').notNull(),
+    panNumber: text('pan_number'),
 
     photoUrl: text('photo_url'),
     signatureUrl: text('signature_url'),
@@ -39,6 +51,7 @@ export const ClientTable = pgTable(
     birthDate: text('birth_date').notNull(), // YYYY-MM-DD string to avoid timezone issues
     bloodGroup: BloodGroupEnum().notNull(),
     gender: GenderEnum().notNull(),
+    educationalQualification: EducationalQualificationEnum(),
 
     phoneNumber: text('phone_number').notNull(),
     alternativePhoneNumber: text('alternative_phone_number'),
