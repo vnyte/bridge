@@ -35,3 +35,9 @@ export * from './client-transactions/relations';
 
 export * from './sessions/columns';
 export * from './sessions/relations';
+
+export * from './form-prints/columns';
+export * from './form-prints/relations';
+
+export * from './staff/columns';
+export * from './staff/relations';

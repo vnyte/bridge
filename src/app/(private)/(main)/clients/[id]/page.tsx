@@ -2,9 +2,9 @@ import { getClient } from '@/server/db/client';
 import { getCurrentOrganizationBranch } from '@/server/db/branch';
 import { notFound } from 'next/navigation';
 import { ClientAdmissionForm } from '@/features/clients/components/client-admission-form';
-import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { TypographyH4 } from '@/components/ui/typography';
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,18 +21,15 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <Link href="/clients">
-          <Button variant="link" size="sm" className="mb-4 !px-0">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Clients
-          </Button>
+      <div className="flex gap-4 items-center pb-4">
+        <Link href="/vehicles">
+          <ArrowLeft className="size-5 text-gray-700" />
         </Link>
-        <h1 className="text-2xl font-bold">
+        <TypographyH4>
           {client.firstName} {client.middleName} {client.lastName}
-        </h1>
-        <p className="text-muted-foreground">Complete or update client information</p>
+        </TypographyH4>
       </div>
+
       <ClientAdmissionForm client={client} branchConfig={branchConfig} />
     </div>
   );

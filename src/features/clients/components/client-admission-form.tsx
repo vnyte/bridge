@@ -70,6 +70,8 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         firstName: client.firstName,
         middleName: client.middleName || '',
         lastName: client.lastName,
+        aadhaarNumber: client.aadhaarNumber || '',
+        panNumber: client.panNumber || '',
         photoUrl: client.photoUrl || '',
         signatureUrl: client.signatureUrl || '',
         guardianFirstName: client.guardianFirstName || '',
@@ -449,7 +451,7 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         {/* Progress Bar */}
         <ProgressBar interactive={true} />
 
-        <ScrollArea className="h-[calc(100vh-400px)] pr-10">
+        <ScrollArea className="h-[calc(100vh-20rem)] pr-10">
           <form className="space-y-8 pb-24">
             {stepComponents[currentStep as StepKey].component}
           </form>

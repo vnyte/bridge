@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
-import { BloodGroupEnum, GenderEnum, CitizenStatusEnum, EducationalQualificationEnum } from '@/db/schema/client/columns';
+import { BloodGroupEnum, GenderEnum, CitizenStatusEnum } from '@/db/schema/client/columns';
 import { TypographyH5, TypographyP } from '@/components/ui/typography';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useEffect } from 'react';
@@ -95,9 +95,9 @@ export const PersonalInfoStep = () => {
               <FormItem>
                 <FormLabel required>Aadhaar Number</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="123456789012" 
-                    value={field.value || ''} 
+                  <Input
+                    placeholder="123456789012"
+                    value={field.value || ''}
                     onChange={field.onChange}
                     maxLength={12}
                   />
@@ -106,7 +106,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.panNumber"
@@ -114,9 +113,9 @@ export const PersonalInfoStep = () => {
               <FormItem>
                 <FormLabel>PAN Number</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="ABCDE1234F" 
-                    value={field.value || ''} 
+                  <Input
+                    placeholder="ABCDE1234F"
+                    value={field.value || ''}
                     onChange={field.onChange}
                     maxLength={10}
                     style={{ textTransform: 'uppercase' }}
@@ -126,9 +125,7 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <div /> {/* Empty div to maintain grid layout */}
-
           <FormField
             control={control}
             name="personalInfo.firstName"
@@ -142,7 +139,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.middleName"
@@ -155,7 +151,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.lastName"
@@ -168,7 +163,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.guardianFirstName"
@@ -182,7 +176,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.guardianMiddleName"
@@ -195,7 +188,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.guardianLastName"
@@ -208,7 +200,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.birthDate"
@@ -228,7 +219,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.bloodGroup"
@@ -253,7 +243,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.gender"
@@ -278,14 +267,13 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
             name="personalInfo.educationalQualification"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Educational Qualification</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select qualification" />
@@ -304,7 +292,6 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-
           <div /> {/* Empty div to maintain grid layout */}
         </div>
       </div>

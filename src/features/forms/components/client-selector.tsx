@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { User } from 'lucide-react';
 import { getClientsForForms } from '@/server/actions/forms';
@@ -33,8 +39,9 @@ export function ClientSelector({ selectedClient, onClientSelect }: ClientSelecto
     fetchClients();
   }, []);
 
-  const selectedClientData = clients.find(client => client.id === selectedClient);
+  const selectedClientData = clients.find((client) => client.id === selectedClient);
 
+  //TODO: Make select client searchable.
   return (
     <Card>
       <CardHeader>
@@ -45,18 +52,22 @@ export function ClientSelector({ selectedClient, onClientSelect }: ClientSelecto
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Select 
-            value={selectedClient || ''} 
+          <Select
+            value={selectedClient || ''}
             onValueChange={(value) => onClientSelect(value || null)}
           >
             <SelectTrigger>
-              <SelectValue placeholder={loading ? "Loading clients..." : "Choose a client to generate forms"} />
+              <SelectValue
+                placeholder={loading ? 'Loading clients...' : 'Choose a client to generate forms'}
+              />
             </SelectTrigger>
             <SelectContent>
               {clients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   <div className="flex items-center space-x-2">
-                    <span>{client.firstName} {client.lastName}</span>
+                    <span>
+                      {client.firstName} {client.lastName}
+                    </span>
                     <Badge variant="outline" className="text-xs">
                       {client.clientCode}
                     </Badge>
@@ -73,9 +84,7 @@ export function ClientSelector({ selectedClient, onClientSelect }: ClientSelecto
                   <h4 className="font-medium text-blue-900">
                     {selectedClientData.firstName} {selectedClientData.lastName}
                   </h4>
-                  <p className="text-sm text-blue-700">
-                    {selectedClientData.phoneNumber}
-                  </p>
+                  <p className="text-sm text-blue-700">{selectedClientData.phoneNumber}</p>
                 </div>
                 <Badge className="bg-blue-100 text-blue-800 border-blue-300">
                   {selectedClientData.clientCode}

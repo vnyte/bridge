@@ -5,6 +5,7 @@ import { Form1ATemplate } from './form-1a';
 import { Form2Template } from './form-2';
 import { Form4Template } from './form-4';
 import { Form5Template } from './form-5';
+import { Form5BTemplate } from './form-5b';
 import { Form8Template } from './form-8';
 import { Form9Template } from './form-9';
 import { FormLLDTemplate } from './form-lld';
@@ -32,6 +33,8 @@ export function FormTemplates({ formId, clientData }: FormTemplatesProps) {
         return <Form4Template clientData={clientData} />;
       case 'form-5':
         return <Form5Template clientData={clientData} />;
+      case 'form-5b':
+        return <Form5BTemplate clientData={clientData} />;
       case 'form-8':
         return <Form8Template clientData={clientData} />;
       case 'form-9':
@@ -50,8 +53,8 @@ export function FormTemplates({ formId, clientData }: FormTemplatesProps) {
   };
 
   return (
-    <div 
-      className="bg-white shadow-lg print:shadow-none print:border-0 print-content" 
+    <div
+      className="bg-white shadow-lg print:shadow-none print:border-0 print-content"
       style={{
         width: '210mm',
         minHeight: '297mm',
@@ -59,7 +62,7 @@ export function FormTemplates({ formId, clientData }: FormTemplatesProps) {
         margin: '0 auto',
         boxSizing: 'border-box',
         fontSize: '14px',
-        lineHeight: '1.4'
+        lineHeight: '1.4',
       }}
     >
       {renderTemplate()}

@@ -62,6 +62,7 @@ export const SessionAssignmentModal = ({
     onAssign(client.id);
   };
 
+  // TODO: Make sure we don't how more than 3 users in the assign session modal
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-96 max-w-[90vw] max-h-[80vh] flex flex-col">
