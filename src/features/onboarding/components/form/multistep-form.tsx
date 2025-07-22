@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, SubmitHandler, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SchoolNameStep from './steps/school-name';
@@ -67,11 +67,15 @@ export const MultistepForm = () => {
   // Completion flow state
   const [showCompletion, setShowCompletion] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [serverActionCompleted, setServerActionCompleted] = useState(false);
+  const [animationsCompleted, setAnimationsCompleted] = useState(false);
 
   // Handle form submission
   const onSubmit: SubmitHandler<OnboardingFormValues> = async (data) => {
     setShowCompletion(true);
     setIsPending(true);
+    setServerActionCompleted(false);
+    setAnimationsCompleted(false);
 
     try {
       const response = await createTenant(data);
@@ -80,9 +84,8 @@ export const MultistepForm = () => {
         setShowCompletion(false);
         toast.error(response.message);
       } else {
-        // On success, proceed to completion flow
-        setShowCompletion(false);
-        setShowSuccess(true);
+        // On success, mark server action as completed
+        setServerActionCompleted(true);
       }
     } catch (error) {
       console.error('Error creating tenant:', error);
@@ -95,9 +98,16 @@ export const MultistepForm = () => {
 
   // Handle completion flow
   const handleCompletionComplete = () => {
-    setShowCompletion(false);
-    setShowSuccess(true);
+    setAnimationsCompleted(true);
   };
+
+  // Effect to handle transition to success screen when both conditions are met
+  useEffect(() => {
+    if (serverActionCompleted && animationsCompleted) {
+      setShowCompletion(false);
+      setShowSuccess(true);
+    }
+  }, [serverActionCompleted, animationsCompleted]);
 
   const handleRedirectToDashboard = async () => {
     // Refresh the session to ensure latest metadata is loaded

@@ -1,12 +1,12 @@
 import { db } from '@/db';
 import { VehicleTable } from '@/db/schema';
 import { auth } from '@clerk/nextjs/server';
-import { eq, ilike, and, or, lte, isNotNull } from 'drizzle-orm';
+import { eq, ilike, and, or, lte, isNotNull, isNull } from 'drizzle-orm';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 
 const _getVehicles = async (branchId: string, name?: string) => {
   // Create a base condition for the organization
-  const conditions = [eq(VehicleTable.branchId, branchId)];
+  const conditions = [eq(VehicleTable.branchId, branchId), isNull(VehicleTable.deletedAt)];
 
   // Only add the name filter if name is defined and not empty
   if (name) {
@@ -33,7 +33,7 @@ export const getVehicles = async (name?: string) => {
 
 const _getVehicle = async (id: string) => {
   const vehicle = await db.query.VehicleTable.findFirst({
-    where: eq(VehicleTable.id, id),
+    where: and(eq(VehicleTable.id, id), isNull(VehicleTable.deletedAt)),
   });
 
   return vehicle;
@@ -67,6 +67,7 @@ const _getVehicleDocumentExpiry = async (branchId: string) => {
     .where(
       and(
         eq(VehicleTable.branchId, branchId),
+        isNull(VehicleTable.deletedAt),
         or(
           // PUC expiring soon or expired
           and(

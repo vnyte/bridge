@@ -20,6 +20,7 @@ export const StaffTable = pgTable('staff', {
   licenseIssueDate: timestamp('license_issue_date', { mode: 'date' }), // License issue date
   experienceYears: text('experience_years'), // Years of driving instruction experience
   educationLevel: text('education_level'), // Educational qualification
+  phone: text('phone'), // WhatsApp phone number for instructors
 
   branchId: uuid('branch_id').notNull(),
 
@@ -27,4 +28,5 @@ export const StaffTable = pgTable('staff', {
 
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at', { mode: 'date' }),
 });

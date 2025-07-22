@@ -27,7 +27,7 @@ import {
   upsertPaymentInDB,
 } from './db';
 import { db } from '@/db';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { PlanTable } from '@/db/schema/plan/columns';
 import { VehicleTable } from '@/db/schema/vehicles/columns';
 import { ClientTable } from '@/db/schema/client/columns';
@@ -424,7 +424,7 @@ export const createPayment = async (
     }
 
     const vehicle = await db.query.VehicleTable.findFirst({
-      where: eq(VehicleTable.id, plan.vehicleId),
+      where: and(eq(VehicleTable.id, plan.vehicleId), isNull(VehicleTable.deletedAt)),
     });
 
     if (!vehicle) {

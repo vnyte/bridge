@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { School, Settings, Sparkles } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'lottie-react';
 
 type CompletionScreenProps = {
   onComplete: () => void;
@@ -10,26 +10,65 @@ type CompletionScreenProps = {
 
 const stages = [
   {
-    icon: School,
+    animation: 'saving-branches',
     text: 'Saving your branches',
-    duration: 2000,
+    duration: 3000,
   },
   {
-    icon: Settings,
+    animation: 'getting-app-ready',
     text: 'Getting your app ready',
-    duration: 2000,
+    duration: 3000,
   },
   {
-    icon: Sparkles,
+    animation: 'almost-there',
     text: 'Almost there',
-    duration: 1500,
+    duration: 3000,
   },
 ];
 
 export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
   const [currentStage, setCurrentStage] = useState(0);
+  const [animationsLoaded, setAnimationsLoaded] = useState(false);
+  const [animationData, setAnimationData] = useState<Record<string, object>>({});
+  const onCompleteRef = useRef(onComplete);
+
+  // Update the ref when onComplete changes
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  // Preload all animations before showing the component
+  useEffect(() => {
+    const loadAnimations = async () => {
+      try {
+        const loadPromises = stages.map(async (stage) => {
+          const response = await fetch(`/${stage.animation}.json`);
+          if (!response.ok) {
+            throw new Error(`Failed to load ${stage.animation}.json: ${response.status}`);
+          }
+          const data = await response.json();
+          return { [stage.animation]: data };
+        });
+
+        const animationResults = await Promise.all(loadPromises);
+        const allAnimations = animationResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+        setAnimationData(allAnimations);
+        setAnimationsLoaded(true);
+      } catch (error) {
+        console.error('Error loading animations:', error);
+        // Still show the component even if animations fail to load
+        setAnimationsLoaded(true);
+      }
+    };
+
+    loadAnimations();
+  }, []);
 
   useEffect(() => {
+    // Only start timers when animations are loaded
+    if (!animationsLoaded) return;
+
     const timers: NodeJS.Timeout[] = [];
     let totalTime = 0;
 
@@ -41,27 +80,49 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
       totalTime += stage.duration;
     });
 
+    // Add the duration of the last stage to ensure it completes
     const finalTimer = setTimeout(() => {
-      onComplete();
+      onCompleteRef.current();
     }, totalTime);
     timers.push(finalTimer);
 
     return () => {
       timers.forEach(clearTimeout);
     };
-  }, [onComplete]);
+  }, [animationsLoaded]); // Start timers only when animations are loaded
+
+  // Show loading state while animations are being preloaded
+  if (!animationsLoaded) {
+    return (
+      <motion.div
+        className="flex items-center justify-center min-h-screen bg-background"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="flex flex-col items-center gap-4">
+          <motion.div
+            className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          />
+          <p className="text-muted-foreground text-sm font-medium">Loading animations...</p>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
       className="flex items-center justify-center min-h-screen bg-background"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: 'easeOut' }}
     >
       <div className="flex items-center gap-16">
-        {/* Left side - illustration placeholder */}
+        {/* Left side - Lottie animation */}
         <motion.div
-          className="w-64 h-64 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl flex items-center justify-center relative overflow-hidden shadow-lg"
+          className="w-64 h-64 flex items-center justify-center relative overflow-hidden"
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{
@@ -72,29 +133,33 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
             damping: 15,
           }}
         >
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent"
-            animate={{
-              rotate: [0, 360],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          />
-          <motion.p
-            className="text-muted-foreground text-sm relative z-10 font-medium"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{
-              delay: 0.8,
-              type: 'spring',
-              stiffness: 200,
-            }}
-          >
-            Illustration placeholder
-          </motion.p>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStage}
+              className="w-full h-full flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.2 }}
+              transition={{
+                duration: 0.5,
+                ease: 'easeInOut',
+              }}
+            >
+              {animationData[stages[currentStage].animation] ? (
+                <Lottie
+                  animationData={animationData[stages[currentStage].animation]}
+                  loop
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className="flex items-center justify-center w-full h-full">
+                  <p className="text-muted-foreground text-sm font-medium">
+                    Animation not available
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
 
         {/* Right side - stages */}
@@ -112,8 +177,8 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
         >
           <motion.h1
             className="text-2xl font-semibold text-foreground mb-8"
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{
               delay: 0.7,
               duration: 0.6,
@@ -125,7 +190,6 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
 
           <div className="relative">
             {stages.map((stage, index) => {
-              const IconComponent = stage.icon;
               const isActive = index === currentStage;
               const isCompleted = index < currentStage;
               const isLast = index === stages.length - 1;
@@ -135,10 +199,10 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
                   {/* Connecting line */}
                   {!isLast && (
                     <motion.div
-                      className="absolute left-5 top-10 w-0.5 h-12 bg-gradient-to-b from-primary to-border"
+                      className="absolute left-3 top-6 w-0.5 h-6 bg-gradient-to-b from-green-500 to-green-500"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{
-                        height: isCompleted ? 48 : 0,
+                        height: isCompleted ? 24 : 0,
                         opacity: isCompleted ? 1 : 0.3,
                       }}
                       transition={{
@@ -151,8 +215,8 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
 
                   <motion.div
                     className="flex items-center gap-4 relative z-10"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{
                       delay: 0.9 + index * 0.2,
                       duration: 0.5,
@@ -161,17 +225,15 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
                   >
                     <div className="relative">
                       <motion.div
-                        className={`h-10 w-10 rounded-full flex items-center justify-center border-2 shadow-sm ${
-                          isActive
-                            ? 'bg-primary border-primary shadow-primary/20'
-                            : isCompleted
-                              ? 'bg-primary border-primary'
-                              : 'bg-background border-border'
+                        className={`h-6 w-6 rounded-full border-2 shadow-sm flex items-center justify-center ${
+                          isActive || isCompleted
+                            ? 'bg-green-400 border-green-400 shadow-green-400/20'
+                            : 'bg-background border-border'
                         }`}
                         animate={{
                           scale: isActive ? 1.1 : 1,
                           boxShadow: isActive
-                            ? '0 0 20px rgba(var(--primary-rgb), 0.3)'
+                            ? '0 0 20px rgba(34, 197, 94, 0.3)'
                             : '0 2px 4px rgba(0,0,0,0.1)',
                         }}
                         transition={{
@@ -179,38 +241,18 @@ export const CompletionScreen = ({ onComplete }: CompletionScreenProps) => {
                           ease: 'easeOut',
                         }}
                       >
-                        {isActive && (
+                        {/* Simple green dot indicator */}
+                        {(isActive || isCompleted) && (
                           <motion.div
-                            className="absolute inset-0 rounded-full border-2 border-primary/40"
-                            animate={{
-                              scale: [1, 1.4],
-                              opacity: [0.8, 0],
-                            }}
+                            className="w-2 h-2 bg-white rounded-full"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
                             transition={{
-                              duration: 2,
-                              repeat: Infinity,
+                              duration: 0.2,
                               ease: 'easeOut',
                             }}
                           />
                         )}
-                        <motion.div
-                          animate={{
-                            rotate: isCompleted && !isActive ? 0 : isActive ? 360 : 0,
-                          }}
-                          transition={{
-                            duration: isActive ? 2 : 0.5,
-                            repeat: isActive ? Infinity : 0,
-                            ease: isActive ? 'linear' : 'easeOut',
-                          }}
-                        >
-                          <IconComponent
-                            className={`h-5 w-5 ${
-                              isActive || isCompleted
-                                ? 'text-primary-foreground'
-                                : 'text-muted-foreground'
-                            }`}
-                          />
-                        </motion.div>
                       </motion.div>
                     </div>
 

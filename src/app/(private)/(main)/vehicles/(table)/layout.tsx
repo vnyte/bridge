@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { TypographyH4 } from '@/components/ui/typography';
 import { VehicleSearchBar } from '@/features/vehicles/components/search-bar';
 import Link from 'next/link';
+import { Plus } from 'lucide-react';
 
 export default function VehiclesTableLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +14,10 @@ export default function VehiclesTableLayout({ children }: { children: React.Reac
           <VehicleSearchBar />
         </Suspense>
         <Link href="/vehicles/add">
-          <Button>Add Vehicle</Button>
+          <Button>
+            <Plus className="h-4 w-4" />
+            Add Vehicle
+          </Button>
         </Link>
       </div>
       {children}

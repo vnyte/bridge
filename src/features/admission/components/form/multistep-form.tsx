@@ -193,11 +193,14 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
       const selectedDate = data.joiningDate.toISOString().split('T')[0]; // YYYY-MM-DD format
       const selectedTime = `${data.joiningDate.getHours().toString().padStart(2, '0')}:${data.joiningDate.getMinutes().toString().padStart(2, '0')}`;
 
-      // Check if the selected slot is already taken
+      // Check if the selected slot is already taken (excluding current client's sessions)
       const conflictSession = sessions.find((session) => {
         const sessionDate = session.sessionDate; // Already in YYYY-MM-DD format
         const sessionTime = session.startTime.substring(0, 5); // Remove seconds if present
-        return sessionDate === selectedDate && sessionTime === selectedTime;
+        const isCurrentClientSession = clientId && session.clientId === clientId;
+        return (
+          sessionDate === selectedDate && sessionTime === selectedTime && !isCurrentClientSession
+        );
       });
 
       if (conflictSession) {

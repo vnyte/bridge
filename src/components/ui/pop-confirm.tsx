@@ -65,20 +65,38 @@ export function PopConfirm({
     }
   };
 
+  const getPopoverPosition = () => {
+    if (!triggerRect) return { left: 0, top: 0 };
+
+    const popoverHeight = 200; // Approximate height of the popover
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - triggerRect.bottom;
+    const spaceAbove = triggerRect.top;
+
+    // If there's not enough space below, position above
+    const shouldPositionAbove = spaceBelow < popoverHeight && spaceAbove > spaceBelow;
+
+    const left = Math.max(16, Math.min(triggerRect.left, window.innerWidth - 320 - 16));
+    const top = shouldPositionAbove ? triggerRect.top - popoverHeight - 4 : triggerRect.bottom + 4;
+
+    return { left, top };
+  };
+
   const defaultIcon = (
     <div className="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
       !
     </div>
   );
 
+  const position = getPopoverPosition();
   const popoverContent =
     open && triggerRect ? (
       <div
         className="fixed bg-white border rounded-lg shadow-lg p-4 w-80"
         style={{
           zIndex: 10000,
-          left: triggerRect.left,
-          top: triggerRect.bottom + 4,
+          left: position.left,
+          top: position.top,
           pointerEvents: 'auto',
         }}
       >
@@ -116,7 +134,7 @@ export function PopConfirm({
 
   return (
     <>
-      <div ref={triggerRef} onClick={handleTriggerClick} className="inline-block">
+      <div ref={triggerRef} onClick={handleTriggerClick} className="inline-block w-full">
         {children}
       </div>
       {typeof window !== 'undefined' &&

@@ -61,6 +61,7 @@
     "jose": "^6.0.10",
     "jotai": "^2.12.2",
     "jspdf": "^3.0.1",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.475.0",
     "nanoid": "^5.1.5",
     "next": "^15.2.3",

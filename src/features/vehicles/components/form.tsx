@@ -60,7 +60,6 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
         toast.success(result.message);
         if (!vehicle?.id) {
           form.reset();
-          router.push('/vehicles');
         }
       }
     } catch (error) {
@@ -68,6 +67,7 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
       toast.error('Something went wrong');
     } finally {
       setIsPending(false);
+      router.push('/vehicles');
     }
   }
 
@@ -188,7 +188,11 @@ export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
                     <Input
                       placeholder="Enter here"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = value === '' ? 0 : Number(value);
+                        field.onChange(isNaN(numValue) ? 0 : numValue);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

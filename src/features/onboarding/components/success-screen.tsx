@@ -28,8 +28,8 @@ export const SuccessScreen = ({ onRedirect }: SuccessScreenProps) => {
         {/* Success icon with animation */}
         <motion.div
           className="relative"
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
           transition={{
             type: 'spring',
             stiffness: 260,

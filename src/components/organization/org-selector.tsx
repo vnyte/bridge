@@ -24,5 +24,19 @@ export function OrgSelector() {
     autoSelectOrg();
   }, [isLoaded, organization, userMemberships.data, setActive]);
 
-  return <OrganizationSwitcher hidePersonal />;
+  return (
+    <OrganizationSwitcher
+      hidePersonal
+      appearance={{
+        elements: {
+          organizationSwitcherPopoverActionButton__createOrganization: {
+            display: 'none',
+          },
+          // organizationSwitcherPopoverActionButton__manageOrganization: {
+          //   display: 'none',
+          // },
+        },
+      }}
+    />
+  );
 }

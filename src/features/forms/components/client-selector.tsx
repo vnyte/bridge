@@ -62,18 +62,24 @@ export function ClientSelector({ selectedClient, onClientSelect }: ClientSelecto
               />
             </SelectTrigger>
             <SelectContent>
-              {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  <div className="flex items-center space-x-2">
-                    <span>
-                      {client.firstName} {client.lastName}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
-                      {client.clientCode}
-                    </Badge>
-                  </div>
-                </SelectItem>
-              ))}
+              {!loading && clients.length === 0 ? (
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  No clients found
+                </div>
+              ) : (
+                clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    <div className="flex items-center space-x-2">
+                      <span>
+                        {client.firstName} {client.lastName}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {client.clientCode}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
 

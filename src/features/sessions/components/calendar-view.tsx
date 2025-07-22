@@ -266,13 +266,13 @@ export const CalendarView = () => {
             </SelectTrigger>
             <SelectContent>
               {isLoading ? (
-                <SelectItem value="loading" disabled>
+                <div className="p-2 text-sm text-muted-foreground text-center">
                   Loading vehicles...
-                </SelectItem>
+                </div>
               ) : vehicles?.length === 0 ? (
-                <SelectItem value="no-vehicles" disabled>
-                  No vehicles available
-                </SelectItem>
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  No vehicles found
+                </div>
               ) : (
                 vehicles?.map((vehicle) => (
                   <SelectItem key={vehicle.id} value={vehicle.id}>

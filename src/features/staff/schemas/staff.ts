@@ -18,6 +18,7 @@ export const staffFormSchema = z
     licenseIssueDate: z.date().optional(),
     experienceYears: z.string().optional(),
     educationLevel: z.string().optional(),
+    phone: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -82,5 +83,23 @@ export const staffFormSchema = z
     {
       message: 'Education level is required for instructors',
       path: ['educationLevel'],
+    }
+  )
+  .refine(
+    (data) => {
+      // If staff role is instructor, phone is required and must be valid WhatsApp format
+      if (data.staffRole === 'instructor') {
+        if (!data.phone || data.phone.trim().length === 0) {
+          return false;
+        }
+        // WhatsApp phone number validation: starts with country code, 10-15 digits
+        const phoneRegex = /^\+[1-9]\d{1,14}$/;
+        return phoneRegex.test(data.phone.trim());
+      }
+      return true;
+    },
+    {
+      message: 'Valid WhatsApp phone number is required for instructors (e.g., +919876543210)',
+      path: ['phone'],
     }
   );

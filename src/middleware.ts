@@ -12,7 +12,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     await auth.protect();
 
-    const { sessionClaims } = await auth();
+    const { sessionClaims, orgId } = await auth();
 
     // Type-safe access to publicMetadata
     const publicMetadata =
@@ -24,7 +24,7 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.next();
     }
 
-    const isOnboardingComplete = !!publicMetadata.isOnboardingComplete;
+    const isOnboardingComplete = !!publicMetadata.isOnboardingComplete || !!orgId;
 
     // If user is already onboarded but tries to access onboarding route, redirect to home
     if (isOnboardingRoute(req) && isOnboardingComplete) {
@@ -41,7 +41,7 @@ export default clerkMiddleware(async (auth, req) => {
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest|json)).*)',
     // Always run for API routes
     '/(api|trpc)(.*)',
   ],

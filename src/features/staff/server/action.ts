@@ -2,7 +2,11 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
-import { addStaff as addStaffInDB, updateStaff as updateStaffInDB } from './db';
+import {
+  addStaff as addStaffInDB,
+  updateStaff as updateStaffInDB,
+  deleteStaff as deleteStaffInDB,
+} from './db';
 import { ActionReturnType } from '@/types/actions';
 import { staffFormSchema } from '../schemas/staff';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
@@ -99,6 +103,38 @@ export async function updateStaff(
     };
   } catch (error) {
     console.error('Error updating staff:', error);
+    return {
+      error: true,
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Server action to delete (soft delete) a staff member
+ */
+export async function deleteStaff(id: string): ActionReturnType {
+  try {
+    const { userId, orgId } = await auth();
+
+    if (!userId || !orgId) {
+      return { error: true, message: 'User not authenticated or not in an organization' };
+    }
+
+    const branchId = await getCurrentOrganizationBranchId();
+
+    if (!branchId) {
+      return { error: true, message: 'Branch not found' };
+    }
+
+    await deleteStaffInDB(id, branchId);
+
+    return {
+      error: false,
+      message: 'Staff member deleted successfully',
+    };
+  } catch (error) {
+    console.error('Error deleting staff:', error);
     return {
       error: true,
       message: error instanceof Error ? error.message : 'An unknown error occurred',

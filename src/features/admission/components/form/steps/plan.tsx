@@ -84,11 +84,14 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
         const selectedDate = format(dateTime, 'yyyy-MM-dd');
         const selectedTime = format(dateTime, 'HH:mm');
 
-        // Check if the selected slot is already taken
+        // Check if the selected slot is already taken (excluding current client's sessions)
         const conflictSession = sessions.find((session) => {
           const sessionDate = session.sessionDate; // Already in YYYY-MM-DD format
           const sessionTime = session.startTime.substring(0, 5); // Remove seconds if present
-          return sessionDate === selectedDate && sessionTime === selectedTime;
+          const isCurrentClientSession = currentClientId && session.clientId === currentClientId;
+          return (
+            sessionDate === selectedDate && sessionTime === selectedTime && !isCurrentClientSession
+          );
         });
 
         if (conflictSession) {
@@ -97,7 +100,9 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
           const occupiedSlots = sessions
             .filter((session) => {
               const sessionDate = session.sessionDate; // Already in YYYY-MM-DD format
-              return sessionDate === selectedDate;
+              const isCurrentClientSession =
+                currentClientId && session.clientId === currentClientId;
+              return sessionDate === selectedDate && !isCurrentClientSession;
             })
             .map((session) => session.startTime.substring(0, 5));
 
@@ -139,7 +144,7 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
         setCheckingAvailability(false);
       }
     },
-    [branchConfig.operatingHours]
+    [branchConfig.operatingHours, currentClientId]
   );
 
   useEffect(() => {
@@ -168,13 +173,13 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
                   </FormControl>
                   <SelectContent>
                     {isLoading ? (
-                      <SelectItem value="loading" disabled>
+                      <div className="p-2 text-sm text-muted-foreground text-center">
                         Loading vehicles...
-                      </SelectItem>
+                      </div>
                     ) : vehicles?.length === 0 ? (
-                      <SelectItem value="no-vehicles" disabled>
-                        No vehicles available
-                      </SelectItem>
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        No vehicles found
+                      </div>
                     ) : (
                       vehicles?.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>

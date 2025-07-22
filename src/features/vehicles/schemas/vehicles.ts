@@ -6,5 +6,5 @@ export const vehicleFormSchema = z.object({
   pucExpiry: z.string().nullable().optional(),
   insuranceExpiry: z.string().nullable().optional(),
   registrationExpiry: z.string().nullable().optional(),
-  rent: z.number(),
+  rent: z.number().positive('Rent must be greater than 0'),
 });

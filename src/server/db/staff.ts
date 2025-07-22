@@ -1,11 +1,11 @@
 import { db } from '@/db';
 import { StaffTable, StaffRoleEnum } from '@/db/schema';
 import { auth } from '@clerk/nextjs/server';
-import { eq, ilike, and, desc, or } from 'drizzle-orm';
+import { eq, ilike, and, desc, or, isNull } from 'drizzle-orm';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 
 const _getStaff = async (branchId: string, name?: string, role?: string | 'ALL') => {
-  const conditions = [eq(StaffTable.branchId, branchId)];
+  const conditions = [eq(StaffTable.branchId, branchId), isNull(StaffTable.deletedAt)];
 
   if (name) {
     conditions.push(
@@ -46,7 +46,11 @@ export const getStaff = async (name?: string, role?: string | 'ALL') => {
 
 const _getStaffMember = async (id: string, branchId: string) => {
   const staff = await db.query.StaffTable.findFirst({
-    where: and(eq(StaffTable.id, id), eq(StaffTable.branchId, branchId)),
+    where: and(
+      eq(StaffTable.id, id),
+      eq(StaffTable.branchId, branchId),
+      isNull(StaffTable.deletedAt)
+    ),
     with: {
       assignedVehicle: true,
     },

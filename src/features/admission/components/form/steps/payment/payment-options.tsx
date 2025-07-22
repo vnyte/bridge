@@ -153,7 +153,9 @@ export const PaymentOptions = ({
                       placeholder="Enter discount amount"
                       {...field}
                       onChange={(e) => {
-                        field.onChange(Number(e.target.value) ?? 0);
+                        const value = e.target.value;
+                        const numValue = value === '' ? 0 : Number(value);
+                        field.onChange(isNaN(numValue) ? 0 : numValue);
                         handleDiscountChange(e.target.value);
                       }}
                       className="h-12 pr-10" // Added right padding for the X icon

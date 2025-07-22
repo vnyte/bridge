@@ -65,6 +65,7 @@ export function StaffForm({ staff }: { staff?: Staff }) {
       licenseIssueDate: staff?.licenseIssueDate || undefined,
       experienceYears: staff?.experienceYears || '',
       educationLevel: staff?.educationLevel || '',
+      phone: staff?.phone || '',
     },
   });
 
@@ -104,6 +105,7 @@ export function StaffForm({ staff }: { staff?: Staff }) {
       form.setValue('licenseIssueDate', undefined);
       form.setValue('experienceYears', '');
       form.setValue('educationLevel', '');
+      form.setValue('phone', '');
     } else {
       // If changing to instructor and currently "none", clear the value to show validation
       if (form.getValues('assignedVehicleId') === 'none') {
@@ -398,19 +400,25 @@ export function StaffForm({ staff }: { staff?: Staff }) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {vehicles.map((vehicle) => {
-                            const isAssigned = allStaff.some(
-                              (s) => s.assignedVehicleId === vehicle.id && s.id !== staff?.id
-                            );
-                            return (
-                              <SelectItem key={vehicle.id} value={vehicle.id}>
-                                {vehicle.name} - {vehicle.number}
-                                {isAssigned && (
-                                  <span className="text-orange-500 ml-2">(Assigned)</span>
-                                )}
-                              </SelectItem>
-                            );
-                          })}
+                          {vehicles.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              No vehicles found
+                            </div>
+                          ) : (
+                            vehicles.map((vehicle) => {
+                              const isAssigned = allStaff.some(
+                                (s) => s.assignedVehicleId === vehicle.id && s.id !== staff?.id
+                              );
+                              return (
+                                <SelectItem key={vehicle.id} value={vehicle.id}>
+                                  {vehicle.name} - {vehicle.number}
+                                  {isAssigned && (
+                                    <span className="text-orange-500 ml-2">(Assigned)</span>
+                                  )}
+                                </SelectItem>
+                              );
+                            })
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -504,6 +512,25 @@ export function StaffForm({ staff }: { staff?: Staff }) {
                           <SelectItem value="others">Others</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="col-span-12">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel required>WhatsApp Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., +919876543210" type="tel" {...field} />
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        This number will be used to send WhatsApp messages to the instructor
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
