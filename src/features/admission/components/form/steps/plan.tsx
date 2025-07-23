@@ -16,10 +16,11 @@ import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { useVehicles } from '@/hooks/vehicles';
 import { TypographyH5 } from '@/components/ui/typography';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, LockIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { getSessions } from '@/server/actions/sessions';
+import { getSessions, getSessionsByClientId } from '@/server/actions/sessions';
 import { SessionAvailabilityModal } from '../session-availability-modal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Generate time slots based on branch operating hours
 const generateTimeSlots = (operatingHours: { start: string; end: string }) => {
@@ -67,6 +68,8 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
   }>({ hasConflict: false, availableSlots: [] });
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [hasCompletedSessions, setHasCompletedSessions] = useState(false);
+  const [loadingSessionStatus, setLoadingSessionStatus] = useState(false);
 
   const selectedVehicleId = watch('plan.vehicleId');
   const selectedDateTime = watch('plan.joiningDate');
@@ -146,6 +149,25 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
     },
     [branchConfig.operatingHours, currentClientId]
   );
+
+  // Check if client has any completed sessions
+  useEffect(() => {
+    if (currentClientId) {
+      setLoadingSessionStatus(true);
+      getSessionsByClientId(currentClientId)
+        .then((sessions) => {
+          const completed = sessions.some((session) => session.status === 'COMPLETED');
+          setHasCompletedSessions(completed);
+        })
+        .catch((error) => {
+          console.error('Error checking completed sessions:', error);
+          setHasCompletedSessions(false);
+        })
+        .finally(() => {
+          setLoadingSessionStatus(false);
+        });
+    }
+  }, [currentClientId]);
 
   useEffect(() => {
     if (selectedVehicleId && selectedDateTime) {
@@ -246,13 +268,35 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
               name="plan.joiningDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel required>Joining Date & Time</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <FormLabel required>Joining Date & Time</FormLabel>
+                    {hasCompletedSessions && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center text-amber-500">
+                              <LockIcon className="h-4 w-4" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">
+                              Date cannot be changed because there are completed sessions
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    {loadingSessionStatus && (
+                      <span className="text-xs text-muted-foreground">Checking sessions...</span>
+                    )}
+                  </div>
                   <FormControl>
                     <DateTimePicker
                       selected={field.value}
                       onChange={field.onChange}
                       placeholderText="Select joining date and time"
                       maxDate={new Date(2100, 0, 1)}
+                      disableDateChange={hasCompletedSessions}
                     />
                   </FormControl>
                   <FormMessage />

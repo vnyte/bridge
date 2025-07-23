@@ -58,6 +58,60 @@ const getAvatarColor = (name: string) => {
   return colors[hash % colors.length];
 };
 
+// Get session status color and icon
+const getStatusStyles = (status: string) => {
+  switch (status) {
+    case 'COMPLETED':
+      return {
+        color: 'bg-green-500',
+        borderColor: 'border-green-500',
+        textColor: 'text-green-700',
+        label: 'Completed',
+        dotColor: 'bg-green-500',
+      };
+    case 'IN_PROGRESS':
+      return {
+        color: 'bg-orange-500',
+        borderColor: 'border-orange-500',
+        textColor: 'text-orange-700',
+        label: 'In Progress',
+        dotColor: 'bg-orange-500',
+      };
+    case 'NO_SHOW':
+      return {
+        color: 'bg-red-500',
+        borderColor: 'border-red-500',
+        textColor: 'text-red-700',
+        label: 'No Show',
+        dotColor: 'bg-red-500',
+      };
+    case 'CANCELLED':
+      return {
+        color: 'bg-gray-400',
+        borderColor: 'border-gray-400',
+        textColor: 'text-gray-700',
+        label: 'Cancelled',
+        dotColor: 'bg-gray-400',
+      };
+    case 'RESCHEDULED':
+      return {
+        color: 'bg-blue-400',
+        borderColor: 'border-blue-400',
+        textColor: 'text-blue-700',
+        label: 'Rescheduled',
+        dotColor: 'bg-blue-400',
+      };
+    default: // SCHEDULED
+      return {
+        color: 'bg-blue-500',
+        borderColor: 'border-blue-500',
+        textColor: 'text-blue-700',
+        label: 'Scheduled',
+        dotColor: 'bg-blue-500',
+      };
+  }
+};
+
 export const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedVehicle, setSelectedVehicle] = useState<string>('');
@@ -253,7 +307,7 @@ export const CalendarView = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Session Availability</h1>
+      <h1 className="text-2xl font-bold mb-6">Calendar</h1>
 
       {/* Controls Row */}
       <div className="mb-6 flex items-end justify-between gap-4">
@@ -369,7 +423,10 @@ export const CalendarView = () => {
                   <div className="flex-1 h-full">
                     {session ? (
                       <div
-                        className="flex items-center gap-3 px-4 cursor-pointer hover:bg-blue-50 transition-colors h-12"
+                        className={cn(
+                          'flex items-center gap-3 px-4 cursor-pointer hover:bg-blue-50 transition-colors h-12',
+                          `border-l-4 ${getStatusStyles(session.status).borderColor}`
+                        )}
                         onClick={() => handleSessionClick(session)}
                       >
                         {/* Avatar */}
@@ -389,8 +446,24 @@ export const CalendarView = () => {
                         {/* Client Name */}
                         <span className="font-medium text-gray-900">{session.clientName}</span>
 
+                        {/* Status Indicator - only for completed and in-progress sessions */}
+                        {session.status === 'COMPLETED' || session.status === 'IN_PROGRESS' ? (
+                          <div className="flex items-center gap-1 ml-auto">
+                            <div
+                              className={`h-2 w-2 rounded-full ${getStatusStyles(session.status).dotColor}`}
+                            ></div>
+                            <span
+                              className={`text-xs ${getStatusStyles(session.status).textColor}`}
+                            >
+                              {getStatusStyles(session.status).label}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="ml-auto"></div>
+                        )}
+
                         {/* Session Time Range */}
-                        <span className="text-sm text-gray-500 ml-auto">
+                        <span className="text-sm text-gray-500 ml-1">
                           {session.startTime} - {session.endTime}
                         </span>
                       </div>
@@ -443,24 +516,44 @@ export const CalendarView = () => {
                     >
                       {session ? (
                         <div
-                          className="h-full flex items-center gap-2 px-2 cursor-pointer hover:bg-blue-50 transition-colors"
+                          className={cn(
+                            'h-full flex items-center gap-2 px-2 cursor-pointer hover:bg-blue-50 transition-colors',
+                            `border-l-2 ${getStatusStyles(session.status).borderColor}`
+                          )}
                           onClick={() => handleSessionClick(session)}
                         >
-                          <div
-                            className={cn(
-                              'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium',
-                              getAvatarColor(session.clientName)
-                            )}
-                          >
-                            {session.clientName
-                              .split(' ')
-                              .map((n) => n[0])
-                              .join('')
-                              .toUpperCase()}
+                          <div className="flex flex-col items-start justify-center">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={cn(
+                                  'w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium',
+                                  getAvatarColor(session.clientName)
+                                )}
+                              >
+                                {session.clientName
+                                  .split(' ')
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .toUpperCase()}
+                              </div>
+                              <span className="text-xs font-medium text-gray-900 truncate">
+                                {session.clientName}
+                              </span>
+                            </div>
+                            {/* Status indicator - only for completed and in-progress sessions */}
+                            {session.status === 'COMPLETED' || session.status === 'IN_PROGRESS' ? (
+                              <div className="flex items-center gap-1 ml-1 mt-1">
+                                <div
+                                  className={`h-2 w-2 rounded-full ${getStatusStyles(session.status).dotColor}`}
+                                ></div>
+                                <span
+                                  className={`text-xs ${getStatusStyles(session.status).textColor}`}
+                                >
+                                  {getStatusStyles(session.status).label}
+                                </span>
+                              </div>
+                            ) : null}
                           </div>
-                          <span className="text-xs font-medium text-gray-900 truncate">
-                            {session.clientName}
-                          </span>
                         </div>
                       ) : (
                         <div
@@ -503,6 +596,7 @@ export const CalendarView = () => {
                     .join('')
                     .toUpperCase()}
                 </div>
+
                 <div>
                   <p className="font-medium">{selectedSession.clientName}</p>
                   <p className="text-sm text-gray-500">
@@ -515,21 +609,39 @@ export const CalendarView = () => {
                 <p className="text-sm text-gray-600 mb-2">
                   <strong>Time:</strong> {selectedSession.startTime} - {selectedSession.endTime}
                 </p>
-                <p className="text-sm text-gray-600 mb-2">
-                  <strong>Status:</strong> {selectedSession.status.replace('_', ' ')}
-                </p>
+
                 <p className="text-sm text-gray-600">
                   <strong>Session:</strong> #{selectedSession.sessionNumber}
                 </p>
               </div>
+
+              <div>
+                {/* Enhanced Status Display - only for completed and in-progress sessions */}
+                {selectedSession.status === 'COMPLETED' ||
+                selectedSession.status === 'IN_PROGRESS' ? (
+                  <div
+                    className="flex items-center gap-2 rounded-md"
+                    style={{
+                      backgroundColor: `${getStatusStyles(selectedSession.status).borderColor}15`,
+                    }}
+                  >
+                    <span
+                      className={`font-medium ${getStatusStyles(selectedSession.status).textColor}`}
+                    >
+                      {getStatusStyles(selectedSession.status).label}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
 
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={handleEditTime}>
-              Edit Time
-            </Button>
-            {selectedSession && (
+          {selectedSession && selectedSession.status === 'SCHEDULED' && (
+            <DialogFooter className="flex jusitfy-between w-full gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleEditTime}>
+                Edit Time
+              </Button>
+
               <PopConfirm
                 title="Cancel Session"
                 description={`Are you sure you want to cancel this session with ${selectedSession.clientName} on ${formatDateForDisplay(selectedSession.sessionDate)} at ${selectedSession.startTime}? The session will be marked as cancelled and will be counted as an unassigned session.`}
@@ -542,8 +654,8 @@ export const CalendarView = () => {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </PopConfirm>
-            )}
-          </DialogFooter>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 

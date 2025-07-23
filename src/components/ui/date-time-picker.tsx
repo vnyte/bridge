@@ -26,6 +26,7 @@ type DateTimePickerProps<TFieldValues extends FieldValues = FieldValues> = {
   className?: string;
   minDate?: Date;
   maxDate?: Date;
+  disableDateChange?: boolean;
 };
 
 export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
@@ -38,6 +39,7 @@ export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
   className,
   minDate = new Date('1900-01-01'),
   maxDate = new Date(2100, 0, 1),
+  disableDateChange = false,
 }: DateTimePickerProps<TFieldValues>) {
   // Create a date filter function that combines the provided disabled function with min/max date constraints
   const dateFilter = React.useCallback(
@@ -101,6 +103,7 @@ export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
         className={className}
         minDate={minDate}
         maxDate={maxDate}
+        disableDateChange={disableDateChange}
       />
     );
   }
@@ -135,8 +138,10 @@ export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
               <CalendarComponent
                 mode="single"
                 selected={selected as Date | undefined}
-                onSelect={onChange as (date: Date | undefined) => void}
-                disabled={dateFilter}
+                onSelect={
+                  disableDateChange ? undefined : (onChange as (date: Date | undefined) => void)
+                }
+                disabled={disableDateChange ? () => true : dateFilter}
                 initialFocus
               />
             </div>
@@ -250,6 +255,7 @@ function ControlledDateTimePicker<TFieldValues extends FieldValues>({
   className,
   minDate,
   maxDate,
+  disableDateChange = false,
 }: Omit<DateTimePickerProps<TFieldValues>, 'selected' | 'onChange'> & {
   name: FieldPath<TFieldValues>;
   control: Control<TFieldValues>;
@@ -342,8 +348,10 @@ function ControlledDateTimePicker<TFieldValues extends FieldValues>({
               <CalendarComponent
                 mode="single"
                 selected={value as Date | undefined}
-                onSelect={onChange as (date: Date | undefined) => void}
-                disabled={dateFilter}
+                onSelect={
+                  disableDateChange ? undefined : (onChange as (date: Date | undefined) => void)
+                }
+                disabled={disableDateChange ? () => true : dateFilter}
                 initialFocus
               />
             </div>

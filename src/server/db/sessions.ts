@@ -207,18 +207,18 @@ export const updateScheduledSessionsForClient = async (
     orderBy: SessionTable.sessionNumber,
   });
 
-  // Separate touched (non-SCHEDULED) and untouched (SCHEDULED) sessions
-  const touchedSessions = allExistingSessions.filter((s) => s.status !== 'SCHEDULED');
-  const scheduledSessions = allExistingSessions.filter((s) => s.status === 'SCHEDULED');
+  // Separate completed sessions and scheduled sessions
+  const completedSessions = allExistingSessions.filter((s) => s.status === 'COMPLETED');
+  const nonCompletedSessions = allExistingSessions.filter((s) => s.status !== 'COMPLETED');
+  const scheduledSessions = nonCompletedSessions.filter((s) => s.status === 'SCHEDULED');
+  const otherInProgressSessions = nonCompletedSessions.filter((s) => s.status !== 'SCHEDULED');
 
   // Count how many sessions we have total and how many more we need
   const totalSessionsNeeded = newSessions.length;
-  const touchedSessionsCount = touchedSessions.length;
+  const completedSessionsCount = completedSessions.length;
+  const inProgressSessionsCount = otherInProgressSessions.length;
+  const touchedSessionsCount = completedSessionsCount + inProgressSessionsCount;
   const remainingSessionsNeeded = Math.max(0, totalSessionsNeeded - touchedSessionsCount);
-
-  console.log(
-    `Plan update: ${touchedSessionsCount} touched sessions preserved, ${remainingSessionsNeeded} new sessions needed`
-  );
 
   const updates: Promise<unknown>[] = [];
   const creates: Promise<unknown>[] = [];
@@ -230,7 +230,6 @@ export const updateScheduledSessionsForClient = async (
       `Cannot reduce plan to ${totalSessionsNeeded} sessions as ${touchedSessionsCount} sessions have already been completed/started. Minimum allowed: ${touchedSessionsCount} sessions.`
     );
   }
-
   // Delete all scheduled sessions (we'll recreate what's needed)
   if (scheduledSessions.length > 0) {
     for (const session of scheduledSessions) {
@@ -241,14 +240,29 @@ export const updateScheduledSessionsForClient = async (
   // Create new scheduled sessions for remaining slots
   if (remainingSessionsNeeded > 0) {
     // Find the next available session numbers (after touched sessions)
-    const usedSessionNumbers = new Set(touchedSessions.map((s) => s.sessionNumber));
-    const newSessionsToCreate = [];
+    const usedSessionNumbers = new Set(
+      [...completedSessions, ...otherInProgressSessions].map((s) => s.sessionNumber)
+    );
 
+    // Track dates that already have completed or in-progress sessions to avoid duplicates
+    const existingDates = new Set(
+      [...completedSessions, ...otherInProgressSessions].map((s) => s.sessionDate)
+    );
+
+    console.log(`Existing session dates that will be skipped:`, Array.from(existingDates));
+
+    const newSessionsToCreate = [];
     let nextSessionNumber = 1;
     let createdCount = 0;
 
     // Generate new sessions with available session numbers
     for (const newSession of newSessions) {
+      // Skip creating new sessions for dates that already have completed or in-progress sessions
+      if (existingDates.has(newSession.sessionDate)) {
+        console.log(`Skipping new session creation for existing date: ${newSession.sessionDate}`);
+        continue;
+      }
+
       // Find next available session number
       while (usedSessionNumbers.has(nextSessionNumber)) {
         nextSessionNumber++;
@@ -278,11 +292,11 @@ export const updateScheduledSessionsForClient = async (
   await Promise.all([...updates, ...creates, ...deletes]);
 
   return {
-    updated: 0, // We don't update existing sessions, only delete and recreate
+    updated: 0, // No longer updating any sessions
     created: remainingSessionsNeeded,
     deleted: scheduledSessions.length,
-    preserved: touchedSessionsCount,
-    message: `${touchedSessionsCount} completed/started sessions preserved, ${scheduledSessions.length} scheduled sessions updated, ${remainingSessionsNeeded} new sessions created`,
+    preserved: completedSessionsCount + inProgressSessionsCount,
+    message: `${completedSessionsCount} completed sessions preserved, ${inProgressSessionsCount} in-progress sessions preserved, ${scheduledSessions.length} scheduled sessions deleted, ${remainingSessionsNeeded} new sessions created`,
   };
 };
 
