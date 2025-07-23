@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createDateFilter } from '@/lib/utils/date-utils';
 import { useController, Control, FieldPath, FieldValues } from 'react-hook-form';
 
 type DatePickerProps<TFieldValues extends FieldValues = FieldValues> = {
@@ -20,6 +21,7 @@ type DatePickerProps<TFieldValues extends FieldValues = FieldValues> = {
   className?: string;
   minDate?: Date;
   maxDate?: Date;
+  workingDays?: number[]; // Array of working days (0=Sunday, 6=Saturday)
 };
 
 export function DatePicker<TFieldValues extends FieldValues = FieldValues>({
@@ -32,14 +34,14 @@ export function DatePicker<TFieldValues extends FieldValues = FieldValues>({
   className,
   minDate = new Date('1900-01-01'),
   maxDate = new Date(),
+  workingDays = [0, 1, 2, 3, 4, 5, 6], // Default to all days enabled
 }: DatePickerProps<TFieldValues>) {
-  // Create a date filter function that combines the provided disabled function with min/max date constraints
+  // Create a date filter function that combines working days, provided disabled function, and min/max date constraints
   const dateFilter = React.useCallback(
     (date: Date) => {
-      if (date < minDate || date > maxDate) return true;
-      return disabled ? disabled(date) : false;
+      return createDateFilter(workingDays, disabled, minDate, maxDate)(date);
     },
-    [disabled, minDate, maxDate]
+    [workingDays, disabled, minDate, maxDate]
   );
 
   // If control and name are provided, use react-hook-form
@@ -52,6 +54,7 @@ export function DatePicker<TFieldValues extends FieldValues = FieldValues>({
         className={className}
         minDate={minDate}
         maxDate={maxDate}
+        workingDays={workingDays}
       />
     );
   }
@@ -93,6 +96,7 @@ function ControlledDatePicker<TFieldValues extends FieldValues>({
   className,
   minDate,
   maxDate,
+  workingDays = [0, 1, 2, 3, 4, 5, 6], // Default to all days enabled
 }: Omit<DatePickerProps<TFieldValues>, 'selected' | 'onChange'> & {
   name: FieldPath<TFieldValues>;
   control: Control<TFieldValues>;
@@ -117,13 +121,17 @@ function ControlledDatePicker<TFieldValues extends FieldValues>({
     }
   }, [value]);
 
-  // Create a date filter function that combines the provided disabled function with min/max date constraints
+  // Create a date filter function that combines working days, provided disabled function, and min/max date constraints
   const dateFilter = React.useCallback(
     (date: Date) => {
-      if (date < (minDate || new Date('1900-01-01')) || date > (maxDate || new Date())) return true;
-      return disabled ? disabled(date) : false;
+      return createDateFilter(
+        workingDays,
+        disabled,
+        minDate || new Date('1900-01-01'),
+        maxDate || new Date()
+      )(date);
     },
-    [disabled, minDate, maxDate]
+    [workingDays, disabled, minDate, maxDate]
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

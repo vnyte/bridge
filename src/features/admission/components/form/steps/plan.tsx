@@ -289,6 +289,7 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
                       placeholderText="Select joining date and time"
                       maxDate={new Date(2100, 0, 1)}
                       disableDateChange={hasCompletedSessions}
+                      workingDays={branchConfig.workingDays}
                     />
                   </FormControl>
                   <FormMessage />
