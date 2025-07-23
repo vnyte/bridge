@@ -1,8 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
 import Link from 'next/link';
 import { VehicleDocumentExpiry } from '@/server/db/vehicle';
 import { DocumentItem } from './document-item';
@@ -23,14 +22,9 @@ export const DocumentExpiryCard = ({ documents }: DocumentExpiryCardProps) => {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-xl font-semibold">Document Expiry</CardTitle>
-        <CardAction>
-          <Button variant="ghost" size="icon" aria-label="Close card">
-            <X className="h-4 w-4" />
-          </Button>
-        </CardAction>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 flex flex-col justify-between h-full">
         {!hasDocuments ? (
           <DocumentExpiryEmptyState />
         ) : (

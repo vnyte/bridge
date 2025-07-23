@@ -11,19 +11,11 @@ import {
   LearningLicenseValues,
   DrivingLicenseValues,
   PaymentValues,
+  admissionFormSchema,
 } from '@/features/admission/types';
 import { z } from 'zod';
 
-// Simplified form schema for client editing
-const clientFormSchema = z.object({
-  personalInfo: z.any(),
-  learningLicense: z.any().optional(),
-  drivingLicense: z.any().optional(),
-  plan: z.any(),
-  payment: z.any(),
-});
-
-type ClientFormValues = z.infer<typeof clientFormSchema>;
+type ClientFormValues = z.infer<typeof admissionFormSchema>;
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { PersonalInfoStep } from '@/features/admission/components/form/steps/personal-info';
@@ -152,7 +144,7 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
   };
 
   const methods = useForm<ClientFormValues>({
-    resolver: zodResolver(clientFormSchema),
+    resolver: zodResolver(admissionFormSchema),
     defaultValues: getDefaultValues(),
     mode: 'onChange',
   });

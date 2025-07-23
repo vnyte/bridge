@@ -12,11 +12,21 @@ import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
 import { PlanTable } from '@/db/schema/plan/columns';
 import { LicenseClassEnum } from '@/db/schema/enums';
 import { PaymentModeEnum, PaymentTable, PaymentTypeEnum, PaymentStatusEnum } from '@/db/schema';
+import { isTimeWithinOperatingHours } from '@/lib/utils/date-utils';
 
 // Create schemas directly from database tables
 export const personalInfoSchema = createInsertSchema(ClientTable, {
-  aadhaarNumber: z.string().min(12, 'Aadhaar number must be 12 digits').max(12, 'Aadhaar number must be 12 digits').regex(/^\d{12}$/, 'Aadhaar number must contain only digits'),
-  panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format (e.g., ABCDE1234F)').optional().nullable().or(z.literal('')),
+  aadhaarNumber: z
+    .string()
+    .min(12, 'Aadhaar number must be 12 digits')
+    .max(12, 'Aadhaar number must be 12 digits')
+    .regex(/^\d{12}$/, 'Aadhaar number must contain only digits'),
+  panNumber: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format (e.g., ABCDE1234F)')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phoneNumber: z.string().min(1, 'Phone number is required'),
@@ -80,12 +90,38 @@ export const drivingLicenseSchema = createInsertSchema(DrivingLicenseTable, {
   clientId: z.string().optional(), // Make clientId optional since it's added by the server action
 });
 
-export const planSchema = createInsertSchema(PlanTable, {
+// Base plan schema without operating hours validation
+export const basePlanSchema = createInsertSchema(PlanTable, {
   vehicleId: z.string(),
   numberOfSessions: z.number().min(1, 'Number of sessions is required'),
   sessionDurationInMinutes: z.number().min(1, 'Session duration is required'),
   joiningDate: z.date().min(new Date('1900-01-01'), 'Invalid joining date'),
 }).omit({ createdAt: true, updatedAt: true });
+
+// Function to create plan schema with operating hours validation
+export const createPlanSchema = (operatingHours?: { start: string; end: string }) => {
+  return basePlanSchema.extend({
+    joiningDate: z
+      .date()
+      .min(new Date('1900-01-01'), 'Invalid joining date')
+      .refine(
+        (date) => {
+          if (!operatingHours) return true; // No validation if no operating hours provided
+
+          const hours = date.getHours();
+          const minutes = date.getMinutes();
+
+          return isTimeWithinOperatingHours(hours, minutes, operatingHours);
+        },
+        {
+          message: `Selected time must be within operating hours (${operatingHours?.start || '00:00'} - ${operatingHours?.end || '23:59'})`,
+        }
+      ),
+  });
+};
+
+// Default plan schema for backward compatibility
+export const planSchema = basePlanSchema;
 
 export const paymentSchema = createInsertSchema(PaymentTable, {
   discount: z.number().default(0),
@@ -120,7 +156,18 @@ export const paymentSchema = createInsertSchema(PaymentTable, {
   paymentDueDate: z.string().nullable().optional(),
 }).omit({ createdAt: true, updatedAt: true });
 
-// Combined schema for the entire form
+// Function to create admission form schema with operating hours validation
+export const createAdmissionFormSchema = (operatingHours?: { start: string; end: string }) => {
+  return z.object({
+    personalInfo: personalInfoSchema,
+    learningLicense: learningLicenseSchema.optional(),
+    drivingLicense: drivingLicenseSchema.optional(),
+    plan: createPlanSchema(operatingHours),
+    payment: paymentSchema,
+  });
+};
+
+// Default admission form schema for backward compatibility
 export const admissionFormSchema = z.object({
   personalInfo: personalInfoSchema,
   learningLicense: learningLicenseSchema.optional(),

@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { getSessions, getSessionsByClientId } from '@/server/actions/sessions';
 import { SessionAvailabilityModal } from '../session-availability-modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { isTimeWithinOperatingHours } from '@/lib/utils/date-utils';
 
 // Generate time slots based on branch operating hours
 const generateTimeSlots = (operatingHours: { start: string; end: string }) => {
@@ -66,7 +67,6 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
     hasConflict: boolean;
     availableSlots: string[];
   }>({ hasConflict: false, availableSlots: [] });
-  const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [hasCompletedSessions, setHasCompletedSessions] = useState(false);
 
@@ -74,11 +74,20 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
   const selectedDateTime = watch('plan.joiningDate');
   const numberOfSessions = watch('plan.numberOfSessions');
 
+  // Check if selected time is outside operating hours
+  const isTimeOutsideOperatingHours = Boolean(
+    selectedDateTime &&
+      !isTimeWithinOperatingHours(
+        selectedDateTime.getHours(),
+        selectedDateTime.getMinutes(),
+        branchConfig.operatingHours
+      )
+  );
+
   const checkSlotAvailability = useCallback(
     async (vehicleId: string, dateTime: Date) => {
       if (!vehicleId || !dateTime) return;
 
-      setCheckingAvailability(true);
       try {
         // Get all sessions for the selected vehicle
         const sessions = await getSessions(vehicleId);
@@ -142,8 +151,6 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
         }
       } catch (error) {
         console.error('Error checking slot availability:', error);
-      } finally {
-        setCheckingAvailability(false);
       }
     },
     [branchConfig.operatingHours, currentClientId]
@@ -165,10 +172,10 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
   }, [currentClientId]);
 
   useEffect(() => {
-    if (selectedVehicleId && selectedDateTime) {
+    if (selectedVehicleId && selectedDateTime && !isTimeOutsideOperatingHours) {
       checkSlotAvailability(selectedVehicleId, selectedDateTime);
     }
-  }, [selectedVehicleId, selectedDateTime, checkSlotAvailability]);
+  }, [selectedVehicleId, selectedDateTime, isTimeOutsideOperatingHours, checkSlotAvailability]);
 
   return (
     <div className="space-y-10">
@@ -297,14 +304,17 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
               )}
             />
 
-            {/* Slot Availability Status */}
-            {checkingAvailability && (
-              <div className="text-sm text-gray-500">Checking availability...</div>
-            )}
-
-            {!checkingAvailability && selectedDateTime && selectedVehicleId && (
+            {selectedDateTime && selectedVehicleId && (
               <>
-                {slotConflict.hasConflict ? (
+                {isTimeOutsideOperatingHours ? (
+                  <div className="flex items-center gap-2 text-sm text-red-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>
+                      Selected time must be within operating hours (
+                      {branchConfig.operatingHours.start} - {branchConfig.operatingHours.end})
+                    </span>
+                  </div>
+                ) : slotConflict.hasConflict ? (
                   <div className="p-3 border border-orange-200 bg-orange-50 rounded-md">
                     <div className="flex gap-2">
                       <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />

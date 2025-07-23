@@ -1,8 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
 import Link from 'next/link';
 
 interface PendingPaymentsCardProps {
@@ -11,19 +10,17 @@ interface PendingPaymentsCardProps {
 
 export const PendingPaymentsCard = ({ pendingCount }: PendingPaymentsCardProps) => {
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md h-full">
       <CardHeader>
         <CardTitle className="text-xl font-semibold">Overdue Payments</CardTitle>
-        <CardAction>
-          <Button variant="ghost" size="icon">
-            <X className="h-4 w-4" />
-          </Button>
-        </CardAction>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 flex flex-col justify-between h-full">
         <div className="flex items-center gap-4">
-          <div className="text-6xl font-bold text-orange-500">{pendingCount}</div>
-          <div className="text-gray-600">Clients with Overdue Payments</div>
+          <div className="text-6xl font-bold text-red-400">{pendingCount}</div>
+          <div className="flex flex-col">
+            <p className="text-gray-600">Clients with</p>
+            <p className="text-gray-600">Overdue Payments</p>
+          </div>
         </div>
         <Link href="/payments?paymentStatus=Overdue">
           <Button variant="outline" className="w-full">

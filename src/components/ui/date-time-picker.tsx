@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { CalendarIcon, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createDateFilter } from '@/lib/utils/date-utils';
-import { getValidHours, getValidMinutes } from '@/lib/utils/date-utils';
 import { useController, Control, FieldPath, FieldValues } from 'react-hook-form';
 import {
   Select,
@@ -30,7 +29,6 @@ type DateTimePickerProps<TFieldValues extends FieldValues = FieldValues> = {
   maxDate?: Date;
   disableDateChange?: boolean;
   workingDays?: number[]; // Array of working days (0=Sunday, 6=Saturday)
-  operatingHours?: { start: string; end: string }; // Operating hours in HH:MM format
 };
 
 export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
@@ -45,7 +43,6 @@ export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
   maxDate = new Date(2100, 0, 1),
   disableDateChange = false,
   workingDays = [0, 1, 2, 3, 4, 5, 6], // Default to all days enabled
-  operatingHours,
 }: DateTimePickerProps<TFieldValues>) {
   // Create a date filter function that combines working days, provided disabled function, and min/max date constraints
   const dateFilter = React.useCallback(
@@ -59,23 +56,6 @@ export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
   const [hours, setHours] = React.useState<number>(selected ? getHours(selected) % 12 || 12 : 12);
   const [minutes, setMinutes] = React.useState<number>(selected ? getMinutes(selected) : 0);
   const [isPM, setIsPM] = React.useState<boolean>(selected ? getHours(selected) >= 12 : false);
-
-  // Get valid hours and minutes based on operating hours
-  const validHours = getValidHours(isPM, operatingHours);
-  const validMinutes = getValidMinutes(hours, isPM, operatingHours);
-
-  // If current selection is invalid, adjust it
-  React.useEffect(() => {
-    if (validHours.length > 0 && !validHours.includes(hours)) {
-      setHours(validHours[0]);
-    }
-  }, [validHours, hours]);
-
-  React.useEffect(() => {
-    if (validMinutes.length > 0 && !validMinutes.includes(minutes)) {
-      setMinutes(validMinutes[0]);
-    }
-  }, [validMinutes, minutes]);
 
   // Update time state when selected date changes
   React.useEffect(() => {
@@ -127,7 +107,6 @@ export function DateTimePicker<TFieldValues extends FieldValues = FieldValues>({
         maxDate={maxDate}
         disableDateChange={disableDateChange}
         workingDays={workingDays}
-        operatingHours={operatingHours}
       />
     );
   }
@@ -281,7 +260,6 @@ function ControlledDateTimePicker<TFieldValues extends FieldValues = FieldValues
   maxDate = new Date(2100, 0, 1),
   disableDateChange = false,
   workingDays = [0, 1, 2, 3, 4, 5, 6], // Default to all days enabled
-  operatingHours,
 }: Omit<DateTimePickerProps<TFieldValues>, 'selected' | 'onChange'> & {
   name: FieldPath<TFieldValues>;
   control: Control<TFieldValues>;
@@ -310,23 +288,6 @@ function ControlledDateTimePicker<TFieldValues extends FieldValues = FieldValues
   const [hours, setHours] = React.useState<number>(value ? value.getHours() % 12 || 12 : 12);
   const [minutes, setMinutes] = React.useState<number>(value ? value.getMinutes() : 0);
   const [isPM, setIsPM] = React.useState<boolean>(value ? value.getHours() >= 12 : false);
-
-  // Get valid hours and minutes based on operating hours
-  const validHours = getValidHours(isPM, operatingHours);
-  const validMinutes = getValidMinutes(hours, isPM, operatingHours);
-
-  // If current selection is invalid, adjust it
-  React.useEffect(() => {
-    if (validHours.length > 0 && !validHours.includes(hours)) {
-      setHours(validHours[0]);
-    }
-  }, [validHours, hours]);
-
-  React.useEffect(() => {
-    if (validMinutes.length > 0 && !validMinutes.includes(minutes)) {
-      setMinutes(validMinutes[0]);
-    }
-  }, [validMinutes, minutes]);
 
   // Update time state when value changes
   React.useEffect(() => {
