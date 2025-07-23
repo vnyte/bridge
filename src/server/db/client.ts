@@ -53,6 +53,24 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
   // Get session counts for each client
   const clientsWithSessions = await Promise.all(
     clients.map(async (client) => {
+      // Count total sessions
+      const totalSessions = await db
+        .select({ count: count() })
+        .from(SessionTable)
+        .where(eq(SessionTable.clientId, client.id));
+
+      // Count completed sessions
+      const completedSessions = await db
+        .select({ count: count() })
+        .from(SessionTable)
+        .where(and(eq(SessionTable.clientId, client.id), eq(SessionTable.status, 'COMPLETED')));
+
+      // Count cancelled sessions
+      const cancelledSessions = await db
+        .select({ count: count() })
+        .from(SessionTable)
+        .where(and(eq(SessionTable.clientId, client.id), eq(SessionTable.status, 'CANCELLED')));
+
       // Count remaining sessions (scheduled or rescheduled)
       const remainingSessions = await db
         .select({ count: count() })
@@ -76,6 +94,9 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
 
       return {
         ...client,
+        totalSessions: totalSessions[0]?.count || 0,
+        completedSessions: completedSessions[0]?.count || 0,
+        cancelledSessions: cancelledSessions[0]?.count || 0,
         remainingSessions: remainingSessions[0]?.count || 0,
         unassignedSessions: unassignedSessions[0]?.count || 0,
         isComplete,

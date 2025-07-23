@@ -24,6 +24,12 @@ export type PaymentInfoState = typeof PAYMENT_INFO;
 export type PaymentCheckboxProps = {
   paymentCheckboxes: PaymentInfoState;
   setPaymentCheckboxes: Dispatch<SetStateAction<PaymentInfoState>>;
+  existingPayment?: {
+    discount: number;
+    paymentType?: 'FULL_PAYMENT' | 'INSTALLMENTS' | 'PAY_LATER' | null;
+    secondInstallmentDate?: Date | string | null;
+    paymentDueDate?: Date | string | null;
+  } | null;
 };
 
 export type PaymentOverviewProps = {

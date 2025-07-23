@@ -24,11 +24,16 @@ const paymentStatusOptions = [
 ];
 
 const columnOptions = [
+  { key: 'clientCode', label: 'Client Code' },
   { key: 'name', label: 'Name' },
   { key: 'phoneNumber', label: 'Phone Number' },
   { key: 'email', label: 'Email' },
   { key: 'location', label: 'Location' },
   { key: 'paymentStatus', label: 'Payment Status' },
+  { key: 'completedSessions', label: 'Completed Sessions' },
+  { key: 'cancelledSessions', label: 'Cancelled Sessions' },
+  { key: 'remainingSessions', label: 'Remaining Sessions' },
+  { key: 'completionStatus', label: 'Completion Status' },
   { key: 'createdAt', label: 'Joined Date' },
 ];
 

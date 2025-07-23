@@ -3,8 +3,6 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { MoreHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 import type { Payment } from '@/server/db/payments';
 
@@ -83,16 +81,5 @@ export const columns: ColumnDef<Payment>[] = [
   {
     accessorKey: 'clientCode',
     header: 'Client Code',
-  },
-  {
-    id: 'actions',
-    header: '',
-    cell: () => {
-      return (
-        <Button variant="ghost" size="icon">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      );
-    },
   },
 ];

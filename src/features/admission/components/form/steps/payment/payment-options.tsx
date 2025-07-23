@@ -11,13 +11,19 @@ import { useEffect } from 'react';
 export const PaymentOptions = ({
   paymentCheckboxes,
   setPaymentCheckboxes,
+  existingPayment,
 }: PaymentCheckboxProps) => {
   const { control, setValue } = useFormContext<AdmissionFormValues>();
 
-  // Initialize payment type to FULL_PAYMENT if no other type is selected
+  const hasExistingDiscount = existingPayment && existingPayment.discount > 0;
+
+  // Update form value when payment checkboxes change
   useEffect(() => {
-    // If neither installments nor later is checked, ensure payment type is FULL_PAYMENT
-    if (!paymentCheckboxes.installments.isChecked && !paymentCheckboxes.later.isChecked) {
+    if (paymentCheckboxes.installments.isChecked) {
+      setValue('payment.paymentType', 'INSTALLMENTS');
+    } else if (paymentCheckboxes.later.isChecked) {
+      setValue('payment.paymentType', 'PAY_LATER');
+    } else {
       setValue('payment.paymentType', 'FULL_PAYMENT');
     }
   }, [paymentCheckboxes.installments.isChecked, paymentCheckboxes.later.isChecked, setValue]);
@@ -29,9 +35,6 @@ export const PaymentOptions = ({
     setPaymentCheckboxes((prev) => {
       // Handle mutual exclusivity between payment types
       if (info === 'later' && checked === true) {
-        // Update form value for payment type
-        setValue('payment.paymentType', 'PAY_LATER');
-
         return {
           ...prev,
           later: { ...prev.later, isChecked: true },
@@ -40,23 +43,11 @@ export const PaymentOptions = ({
       }
 
       if (info === 'installments' && checked === true) {
-        // Update form value for payment type
-        setValue('payment.paymentType', 'INSTALLMENTS');
-
         return {
           ...prev,
           installments: { ...prev.installments, isChecked: true },
           later: { ...prev.later, isChecked: false },
         };
-      }
-
-      // If both installments and later are unchecked, set to FULL_PAYMENT
-      if (info === 'installments' && checked === false && !prev.later.isChecked) {
-        setValue('payment.paymentType', 'FULL_PAYMENT');
-      }
-
-      if (info === 'later' && checked === false && !prev.installments.isChecked) {
-        setValue('payment.paymentType', 'FULL_PAYMENT');
       }
 
       // For other checkboxes or unchecking
@@ -109,9 +100,14 @@ export const PaymentOptions = ({
             <Checkbox
               checked={paymentCheckboxes.discount.isChecked}
               onCheckedChange={(checked) => handleCheckboxChange('discount', checked)}
+              disabled={Boolean(hasExistingDiscount)}
             />
           </FormControl>
-          <FormLabel className="cursor-pointer">{paymentCheckboxes.discount.label}</FormLabel>
+          <FormLabel
+            className={hasExistingDiscount ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
+          >
+            {paymentCheckboxes.discount.label}
+          </FormLabel>
         </FormItem>
 
         {/* Installments checkbox */}
@@ -159,10 +155,11 @@ export const PaymentOptions = ({
                         handleDiscountChange(e.target.value);
                       }}
                       className="h-12 pr-10" // Added right padding for the X icon
+                      disabled={hasExistingDiscount}
                     />
                   </FormControl>
                   <FormMessage />
-                  {field.value !== 0 && (
+                  {field.value !== 0 && !hasExistingDiscount && (
                     <button
                       type="button"
                       onClick={() => {

@@ -17,6 +17,9 @@ export type Client = {
   clientCode: string;
   createdAt: Date;
   paymentStatus?: 'PENDING' | 'PARTIALLY_PAID' | 'FULLY_PAID' | null;
+  totalSessions: number;
+  completedSessions: number;
+  cancelledSessions: number;
   remainingSessions: number;
   unassignedSessions: number;
   isComplete: boolean;
@@ -91,19 +94,32 @@ export const columns: ColumnDef<Client>[] = [
     },
   },
   {
-    accessorKey: 'remainingSessions',
-    header: 'Remaining Sessions',
+    accessorKey: 'completedSessions',
+    header: 'Completed',
     cell: ({ row }) => {
-      const remaining = row.original.remainingSessions;
-      return <Badge variant={remaining > 0 ? 'default' : 'secondary'}>{remaining}</Badge>;
+      const completed = row.original.completedSessions;
+      const total = row.original.totalSessions;
+      return (
+        <Badge variant="outline">
+          {completed}/{total}
+        </Badge>
+      );
     },
   },
   {
-    accessorKey: 'unassignedSessions',
-    header: 'Unassigned Sessions',
+    accessorKey: 'cancelledSessions',
+    header: 'Cancelled',
     cell: ({ row }) => {
-      const unassigned = row.original.unassignedSessions;
-      return <Badge variant={unassigned > 0 ? 'destructive' : 'secondary'}>{unassigned}</Badge>;
+      const cancelled = row.original.cancelledSessions;
+      return <Badge variant={cancelled > 0 ? 'destructive' : 'outline'}>{cancelled}</Badge>;
+    },
+  },
+  {
+    accessorKey: 'remainingSessions',
+    header: 'Remaining',
+    cell: ({ row }) => {
+      const remaining = row.original.remainingSessions;
+      return <Badge variant={remaining > 0 ? 'default' : 'secondary'}>{remaining}</Badge>;
     },
   },
   {

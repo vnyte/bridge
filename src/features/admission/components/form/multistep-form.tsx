@@ -50,6 +50,8 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
       personalInfo: {
         citizenStatus: 'BIRTH',
         isCurrentAddressSameAsPermanentAddress: false,
+        state: 'Maharashtra',
+        permanentState: 'Maharashtra',
       },
       learningLicense: {},
       drivingLicense: {},
@@ -65,8 +67,11 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
     mode: 'onChange',
   });
 
-  const { trigger, getValues } = methods;
+  const { trigger, getValues, watch } = methods;
   const { currentStep, goToNext, goToPrevious, isFirstStep, isLastStep } = useStepNavigation(true);
+
+  // Watch all form values to detect changes
+  const watchedValues = watch();
 
   // Helper function to generate field paths from type
   const generateFieldPaths = (
@@ -303,6 +308,76 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
     }
   };
 
+  // Get initial default values for comparison
+  const getInitialValues = (): AdmissionFormValues => {
+    return {
+      personalInfo: {
+        citizenStatus: 'BIRTH',
+        isCurrentAddressSameAsPermanentAddress: false,
+        state: 'Maharashtra',
+        permanentState: 'Maharashtra',
+      },
+      learningLicense: {},
+      drivingLicense: {},
+      plan: {
+        vehicleId: '',
+        numberOfSessions: 21,
+        sessionDurationInMinutes: 30,
+      },
+      payment: {
+        discount: 0,
+      },
+    };
+  };
+
+  // Check if current step has any changes compared to initial values
+  const hasCurrentStepChanges = (): boolean => {
+    const initialValues = getInitialValues();
+    const currentStepKey = currentStep as StepKey;
+
+    const getCurrentStepValues = () => {
+      switch (currentStepKey) {
+        case 'personal':
+          return watchedValues.personalInfo;
+        case 'license':
+          return {
+            learningLicense: watchedValues.learningLicense,
+            drivingLicense: watchedValues.drivingLicense,
+          };
+        case 'plan':
+          return watchedValues.plan;
+        case 'payment':
+          return watchedValues.payment;
+        default:
+          return {};
+      }
+    };
+
+    const getInitialStepValues = () => {
+      switch (currentStepKey) {
+        case 'personal':
+          return initialValues.personalInfo;
+        case 'license':
+          return {
+            learningLicense: initialValues.learningLicense,
+            drivingLicense: initialValues.drivingLicense,
+          };
+        case 'plan':
+          return initialValues.plan;
+        case 'payment':
+          return initialValues.payment;
+        default:
+          return {};
+      }
+    };
+
+    const currentValues = getCurrentStepValues();
+    const initialStepValues = getInitialStepValues();
+
+    // Deep comparison to check for changes
+    return JSON.stringify(currentValues) !== JSON.stringify(initialStepValues);
+  };
+
   console.log('Step validation fields:', methods.formState.errors);
   // Handle next step navigation with validation
   const handleNext = async () => {
@@ -320,7 +395,22 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
         return;
       }
 
-      // Step 2: Execute the step-specific action
+      // Check if there are any changes in the current step
+      const hasChanges = hasCurrentStepChanges();
+
+      if (!hasChanges) {
+        // If no changes, just proceed to next step without submitting
+        console.log('No changes detected, skipping submission');
+        if (isLastStep) {
+          router.refresh();
+          router.push('/dashboard'); // Redirect to dashboard or another appropriate page
+        } else {
+          goToNext();
+        }
+        return;
+      }
+
+      // Step 2: Execute the step-specific action only if there are changes
       setIsSubmitting(true);
       try {
         // Get the current step's data and action handler

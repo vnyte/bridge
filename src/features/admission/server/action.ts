@@ -61,11 +61,23 @@ export const createClient = async (
   }
 
   try {
+    // Safely convert birthDate to string, handling edge cases
+    const birthDateString =
+      unsafeData.birthDate instanceof Date
+        ? dateToString(unsafeData.birthDate)
+        : typeof unsafeData.birthDate === 'string'
+          ? unsafeData.birthDate
+          : '';
+
+    if (!birthDateString) {
+      return { error: true, message: 'Birth date is required' };
+    }
+
     const { isExistingClient, clientId } = await upsertClientInDB({
       ...unsafeData,
       branchId,
       tenantId,
-      birthDate: dateToString(unsafeData.birthDate), // Convert to YYYY-MM-DD string
+      birthDate: birthDateString, // Convert to YYYY-MM-DD string
     });
 
     return {

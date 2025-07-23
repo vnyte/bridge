@@ -6,7 +6,11 @@
 /**
  * Convert JavaScript Date to YYYY-MM-DD string (local date, no timezone conversion)
  */
-export function dateToString(date: Date): string {
+export function dateToString(date: Date | null | undefined): string {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    throw new Error('Invalid date provided to dateToString');
+  }
+
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');

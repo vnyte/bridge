@@ -69,7 +69,6 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [hasCompletedSessions, setHasCompletedSessions] = useState(false);
-  const [loadingSessionStatus, setLoadingSessionStatus] = useState(false);
 
   const selectedVehicleId = watch('plan.vehicleId');
   const selectedDateTime = watch('plan.joiningDate');
@@ -153,7 +152,6 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
   // Check if client has any completed sessions
   useEffect(() => {
     if (currentClientId) {
-      setLoadingSessionStatus(true);
       getSessionsByClientId(currentClientId)
         .then((sessions) => {
           const completed = sessions.some((session) => session.status === 'COMPLETED');
@@ -162,9 +160,6 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
         .catch((error) => {
           console.error('Error checking completed sessions:', error);
           setHasCompletedSessions(false);
-        })
-        .finally(() => {
-          setLoadingSessionStatus(false);
         });
     }
   }, [currentClientId]);
@@ -285,9 +280,6 @@ export const PlanStep = ({ branchConfig, currentClientId }: PlanStepProps) => {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    )}
-                    {loadingSessionStatus && (
-                      <span className="text-xs text-muted-foreground">Checking sessions...</span>
                     )}
                   </div>
                   <FormControl>

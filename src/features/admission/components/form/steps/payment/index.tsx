@@ -9,15 +9,29 @@ import { PaymentOverview as PaymentOverviewComponent } from './payment-overview'
 export { PAYMENT_INFO, type PaymentInfoState } from './types';
 export { PaymentOverviewComponent as PaymentOverview };
 
-export const PaymentStep = ({ paymentCheckboxes, setPaymentCheckboxes }: PaymentCheckboxProps) => {
+interface PaymentStepProps extends PaymentCheckboxProps {
+  existingPayment?: {
+    discount: number;
+    paymentType?: 'FULL_PAYMENT' | 'INSTALLMENTS' | 'PAY_LATER' | null;
+    secondInstallmentDate?: Date | string | null;
+    paymentDueDate?: Date | string | null;
+  } | null;
+}
+
+export const PaymentStep = ({
+  paymentCheckboxes,
+  setPaymentCheckboxes,
+  existingPayment,
+}: PaymentStepProps) => {
   return (
     <Card className="grid grid-cols-12 col-span-8 align-center px-6 py-10 h-fit">
       <TypographyH5 className="col-span-3">Payment Info</TypographyH5>
       <PaymentOptions
         paymentCheckboxes={paymentCheckboxes}
         setPaymentCheckboxes={setPaymentCheckboxes}
+        existingPayment={existingPayment}
       />
-      {!paymentCheckboxes.later.isChecked && <PaymentModeSelector />}
+      <PaymentModeSelector />
     </Card>
   );
 };
@@ -31,6 +45,7 @@ export const PaymentContainer = () => {
       <PaymentStep
         paymentCheckboxes={paymentCheckboxes}
         setPaymentCheckboxes={setPaymentCheckboxes}
+        existingPayment={null}
       />
       <div className="col-span-4">
         <PaymentOverviewComponent

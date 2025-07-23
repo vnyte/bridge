@@ -51,6 +51,7 @@ export const ClientPaymentContainer = ({ existingPayment }: ClientPaymentContain
       <PaymentStep
         paymentCheckboxes={paymentCheckboxes}
         setPaymentCheckboxes={setPaymentCheckboxes}
+        existingPayment={existingPayment}
       />
       <div className="col-span-4">
         <PaymentOverview

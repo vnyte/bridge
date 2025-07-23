@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { StateSelect } from '@/components/ui/state-select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { BloodGroupEnum, GenderEnum, CitizenStatusEnum } from '@/db/schema/client/columns';
@@ -27,7 +28,8 @@ import { useEffect } from 'react';
 import { Info } from 'lucide-react';
 
 export const PersonalInfoStep = () => {
-  const { control, setValue, clearErrors } = useFormContext<AdmissionFormValues>();
+  const methods = useFormContext<AdmissionFormValues>();
+  const { control, setValue, clearErrors } = methods;
 
   // Watch for changes in the checkbox and address fields
   const isSameAddress = useWatch({
@@ -402,7 +404,12 @@ export const PersonalInfoStep = () => {
               <FormItem>
                 <FormLabel required>State</FormLabel>
                 <FormControl>
-                  <Input placeholder="State" value={field.value || ''} onChange={field.onChange} />
+                  <StateSelect
+                    value={field.value || ''}
+                    onValueChange={field.onChange}
+                    placeholder="Select state"
+                    error={methods.formState.errors.personalInfo?.state?.message}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -489,11 +496,12 @@ export const PersonalInfoStep = () => {
               <FormItem>
                 <FormLabel required>State</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="State"
+                  <StateSelect
                     value={field.value || ''}
-                    onChange={field.onChange}
+                    onValueChange={field.onChange}
+                    placeholder="Select state"
                     disabled={isSameAddress === true}
+                    error={methods.formState.errors.personalInfo?.permanentState?.message}
                   />
                 </FormControl>
                 <FormMessage />

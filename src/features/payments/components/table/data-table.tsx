@@ -1,6 +1,7 @@
 'use client';
 
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useRouter } from 'next/navigation';
 
 import {
   Table,
@@ -17,11 +18,18 @@ interface DataTableProps<TData, TValue> {
 }
 
 export function PaymentDataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  const handleRowClick = (row: { original?: { clientId?: string } }) => {
+    if (row.original?.clientId) {
+      router.push(`/clients/${row.original.clientId}?step=payment`);
+    }
+  };
 
   return (
     <div className="rounded-md border">
@@ -47,7 +55,8 @@ export function PaymentDataTable<TData, TValue>({ columns, data }: DataTableProp
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && 'selected'}
-                className="hover:bg-muted/50"
+                className="hover:bg-muted/50 cursor-pointer"
+                onClick={() => handleRowClick(row)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>

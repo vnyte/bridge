@@ -20,13 +20,15 @@ interface DataTableProps<TData, TValue> {
 
 // Define available column keys
 const availableColumns = [
+  'clientCode',
   'name',
   'phoneNumber',
   'email',
   'location',
   'paymentStatus',
+  'completedSessions',
+  'cancelledSessions',
   'remainingSessions',
-  'unassignedSessions',
   'completionStatus',
   'createdAt',
 ];

@@ -80,6 +80,7 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         birthDate: client.birthDate,
         bloodGroup: client.bloodGroup,
         gender: client.gender,
+        educationalQualification: client.educationalQualification || '',
         phoneNumber: client.phoneNumber,
         alternativePhoneNumber: client.alternativePhoneNumber || '',
         email: client.email || '',
@@ -122,7 +123,7 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
           if (plan?.joiningDate && plan?.joiningTime) {
             // Parse date using utility function (handles all formats)
             const savedDate = parseDate(plan.joiningDate);
-            if (savedDate) {
+            if (savedDate && savedDate instanceof Date && !isNaN(savedDate.getTime())) {
               const [hours, minutes] = plan.joiningTime.split(':').map(Number);
 
               // Create combined date with time components
@@ -143,6 +144,9 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
       },
       payment: {
         discount: client.payments?.[0]?.discount || 0,
+        paymentType: client.payments?.[0]?.paymentType || 'FULL_PAYMENT',
+        secondInstallmentDate: client.payments?.[0]?.secondInstallmentDate || null,
+        paymentDueDate: client.payments?.[0]?.paymentDueDate || null,
       },
     };
   };
@@ -153,8 +157,11 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
     mode: 'onChange',
   });
 
-  const { trigger, getValues } = methods;
+  const { trigger, getValues, reset, watch } = methods;
   const { currentStep, goToNext, goToPrevious, isFirstStep, isLastStep } = useStepNavigation(true);
+
+  // Watch all form values to detect changes
+  const watchedValues = watch();
 
   // Check if payment is processed and should be read-only
   const isPaymentProcessed =
@@ -410,6 +417,20 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         return;
       }
 
+      // Check if there are any changes in the current step
+      const hasChanges = hasCurrentStepChanges();
+
+      if (!hasChanges) {
+        // If no changes, just proceed to next step without submitting
+        console.log('No changes detected, skipping submission');
+        if (isLastStep) {
+          router.push('/clients');
+        } else {
+          goToNext();
+        }
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const stepData = stepComponents[currentStepKey].getData();
@@ -445,6 +466,58 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
     }
   };
 
+  // Check if current step has any changes compared to original values
+  const hasCurrentStepChanges = (): boolean => {
+    const originalValues = getDefaultValues();
+    const currentStepKey = currentStep as StepKey;
+
+    const getCurrentStepValues = () => {
+      switch (currentStepKey) {
+        case 'personal':
+          return watchedValues.personalInfo;
+        case 'license':
+          return {
+            learningLicense: watchedValues.learningLicense,
+            drivingLicense: watchedValues.drivingLicense,
+          };
+        case 'plan':
+          return watchedValues.plan;
+        case 'payment':
+          return watchedValues.payment;
+        default:
+          return {};
+      }
+    };
+
+    const getOriginalStepValues = () => {
+      switch (currentStepKey) {
+        case 'personal':
+          return originalValues.personalInfo;
+        case 'license':
+          return {
+            learningLicense: originalValues.learningLicense,
+            drivingLicense: originalValues.drivingLicense,
+          };
+        case 'plan':
+          return originalValues.plan;
+        case 'payment':
+          return originalValues.payment;
+        default:
+          return {};
+      }
+    };
+
+    const currentValues = getCurrentStepValues();
+    const originalStepValues = getOriginalStepValues();
+
+    return JSON.stringify(currentValues) !== JSON.stringify(originalStepValues);
+  };
+
+  const handleDiscardChanges = () => {
+    reset(getDefaultValues());
+    toast.success('Changes discarded successfully');
+  };
+
   return (
     <FormProvider {...methods}>
       <div className="h-full flex flex-col py-2 gap-4">
@@ -467,14 +540,29 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
             Previous
           </Button>
 
-          <Button
-            type="button"
-            onClick={handleNext}
-            disabled={isSubmitting || shouldDisablePaymentEdit}
-            isLoading={isSubmitting}
-          >
-            {shouldDisablePaymentEdit ? 'Payment Processed' : isLastStep ? 'Save Changes' : 'Next'}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDiscardChanges}
+              disabled={isSubmitting || !hasCurrentStepChanges()}
+            >
+              Discard Changes
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={isSubmitting || shouldDisablePaymentEdit}
+              isLoading={isSubmitting}
+            >
+              {shouldDisablePaymentEdit
+                ? 'Payment Processed'
+                : isLastStep
+                  ? 'Save Changes'
+                  : 'Next'}
+            </Button>
+          </div>
         </div>
       </div>
     </FormProvider>

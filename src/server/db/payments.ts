@@ -102,6 +102,7 @@ const _getPayments = async (branchId: string, name?: string, paymentStatus?: str
 
       return {
         id: payment.id,
+        clientId: payment.clientId,
         clientName: `${payment.clientFirstName} ${payment.clientMiddleName ? payment.clientMiddleName + ' ' : ''}${payment.clientLastName}`,
         amountDue,
         totalFees: payment.finalAmount,

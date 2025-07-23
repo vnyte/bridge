@@ -12,7 +12,7 @@ export function useVehicles() {
 }
 
 export function useVehicle(id: string) {
-  const response = useSWR('vehicle', () => getVehicle(id), {
+  const response = useSWR(id ? ['vehicle', id] : null, () => getVehicle(id), {
     revalidateOnMount: true,
   });
 
