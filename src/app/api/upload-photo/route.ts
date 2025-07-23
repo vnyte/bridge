@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
     }
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
+    // Validate file size (1MB limit)
+    if (file.size > 1 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size must be less than 1MB' }, { status: 400 });
     }
 
     // Create unique filename

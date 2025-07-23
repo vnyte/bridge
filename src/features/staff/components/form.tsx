@@ -150,19 +150,26 @@ export function StaffForm({ staff }: { staff?: Staff }) {
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
+    if (!file) return;
 
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const previewUrl = reader.result as string;
-        setPhotoPreview(previewUrl);
-        // Update form value for validation
-        form.setValue('photo', previewUrl);
-      };
-      reader.readAsDataURL(file);
+    // Validate file size (1MB limit)
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error('Photo size must be less than 1MB');
+      // Reset the input
+      event.target.value = '';
+      return;
     }
+
+    setPhotoFile(file);
+
+    // Create a preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setPhotoPreview(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const uploadPhoto = async (file: File): Promise<string> => {
@@ -312,7 +319,7 @@ export function StaffForm({ staff }: { staff?: Staff }) {
                     className="cursor-pointer"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Upload a photo (JPG, PNG, etc.)
+                    Upload a photo (JPG, PNG, etc.) - Maximum size 1MB
                   </p>
                 </div>
               </div>
