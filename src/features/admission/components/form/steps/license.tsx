@@ -7,9 +7,28 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { TypographyH5 } from '@/components/ui/typography';
 import { AdmissionFormValues } from '@/features/admission/types';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { calculateLicenseFees } from '@/lib/constants/rto-fees';
 
-export const LicenseStep = () => {
-  const { control } = useFormContext<AdmissionFormValues>();
+type LicenseStepProps = {
+  branchServiceCharge?: number;
+};
+
+export const LicenseStep = ({ branchServiceCharge = 0 }: LicenseStepProps) => {
+  const { control, watch } = useFormContext<AdmissionFormValues>();
+
+  // Watch selected license classes and existing license info for fee calculation
+  const selectedLicenseClasses = watch('learningLicense.class') || [];
+  const existingLearningLicenseNumber = watch('learningLicense.licenseNumber') || '';
+  
+  // Check if student already has a learners license
+  const hasExistingLearners = existingLearningLicenseNumber.trim().length > 0;
+  
+  // Calculate fees based on scenario
+  const feeCalculation = calculateLicenseFees(
+    selectedLicenseClasses,
+    hasExistingLearners,
+    branchServiceCharge
+  );
 
   // Create options array for MultiSelect - showing only the 3 most common license types
   const licenseClassOptions = [
@@ -30,9 +49,9 @@ export const LicenseStep = () => {
   return (
     <div className="space-y-10">
       {/* License Classes */}
-      <div className="grid grid-cols-12">
+      <div className="grid grid-cols-12 gap-6">
         <TypographyH5 className="col-span-3">License Classes</TypographyH5>
-        <div className="col-span-3">
+        <div className="col-span-4">
           <FormField
             control={control}
             name="learningLicense.class"
@@ -50,6 +69,28 @@ export const LicenseStep = () => {
               </FormItem>
             )}
           />
+        </div>
+        <div className="col-span-5 h-full">
+          {selectedLicenseClasses.length > 0 && (
+            <div className="text-right h-full flex flex-col justify-end">
+              <div className="text-sm text-gray-600">
+                Estimated License Fees:{' '}
+                <span className="text-lg font-semibold text-blue-700">
+                  ₹{feeCalculation.total}
+                </span>
+              </div>
+
+              <div className="text-xs text-gray-500">
+                Govt: ₹{feeCalculation.governmentFees} + Service: ₹{branchServiceCharge}
+              </div>
+              
+              {selectedLicenseClasses.length > 1 || hasExistingLearners ? (
+                <div className="text-xs text-blue-600 mt-1">
+                  {feeCalculation.breakdown}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 

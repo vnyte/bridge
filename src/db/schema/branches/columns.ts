@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, json } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, json, integer } from 'drizzle-orm/pg-core';
 import { DEFAULT_WORKING_DAYS, DEFAULT_OPERATING_HOURS } from '@/lib/constants/business';
 
 export const BranchTable = pgTable('branches', {
@@ -12,6 +12,9 @@ export const BranchTable = pgTable('branches', {
   operatingHours: json('operating_hours')
     .$type<{ start: string; end: string }>()
     .default(DEFAULT_OPERATING_HOURS),
+
+  // Service charges configuration
+  licenseServiceCharge: integer('license_service_charge').default(500), // Charge for handling license process
 
   tenantId: uuid('tenant_id').notNull(),
   createdBy: text('created_by').notNull(),

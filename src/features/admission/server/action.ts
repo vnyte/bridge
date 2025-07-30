@@ -646,6 +646,7 @@ export const getBranchConfig = async (): Promise<{
   data?: {
     workingDays: number[];
     operatingHours: { start: string; end: string };
+    licenseServiceCharge: number;
   };
 }> => {
   const { userId, orgId } = await auth();
@@ -667,6 +668,7 @@ export const getBranchConfig = async (): Promise<{
       data: {
         workingDays: branch.workingDays || DEFAULT_WORKING_DAYS,
         operatingHours: branch.operatingHours || DEFAULT_OPERATING_HOURS,
+        licenseServiceCharge: branch.licenseServiceCharge || 500,
       },
     };
   } catch (error) {

@@ -36,6 +36,7 @@ type MultistepFormProps = {
   branchConfig: {
     workingDays: number[];
     operatingHours: { start: string; end: string };
+    licenseServiceCharge: number;
   };
 };
 
@@ -288,7 +289,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
         getData: () => getValues('personalInfo'),
       },
       license: {
-        component: <LicenseStep />,
+        component: <LicenseStep branchServiceCharge={branchConfig.licenseServiceCharge} />,
         onSubmit: (data: unknown) =>
           handleLicenseStep(
             data as {
@@ -332,27 +333,9 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
     }
   };
 
-  // Get initial default values for comparison
+  // Get initial default values for comparison (reuse form's defaultValues)
   const getInitialValues = (): AdmissionFormValues => {
-    return {
-      personalInfo: {
-        citizenStatus: 'BIRTH',
-        isCurrentAddressSameAsPermanentAddress: false,
-        state: 'Maharashtra',
-        permanentState: 'Maharashtra',
-        serviceType: (serviceType as 'FULL_SERVICE' | 'DRIVING_ONLY') || 'FULL_SERVICE',
-      },
-      learningLicense: {},
-      drivingLicense: {},
-      plan: {
-        vehicleId: '',
-        numberOfSessions: 21,
-        sessionDurationInMinutes: 30,
-      },
-      payment: {
-        discount: 0,
-      },
-    };
+    return methods.formState.defaultValues as AdmissionFormValues;
   };
 
   // Check if current step has any changes compared to initial values

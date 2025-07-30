@@ -6,10 +6,15 @@ import Link from 'next/link';
 export default function Home() {
   return (
     <div className="h-full">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4">
+        <Button variant="secondary" size="lg">
+          <Link href="/admission" className="flex gap-2 items-center text-primary">
+            <PlusIcon /> RTO Services
+          </Link>
+        </Button>
         <Button size="lg">
           <Link href="/admission" className="flex gap-2 items-center">
-            <PlusIcon /> <p>New admission</p>
+            <PlusIcon /> New admission
           </Link>
         </Button>
       </div>
