@@ -16,11 +16,12 @@ import {
 } from '../../types';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { ServiceTypeStep } from './steps/service-type';
 import { PersonalInfoStep } from './steps/personal-info';
 import { LicenseStep } from './steps/license';
 import { PlanStep } from './steps/plan';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useStepNavigation } from '../progress-bar/progress-bar';
+import { useStepNavigation, ProgressBar } from '../progress-bar/progress-bar';
 import { ActionReturnType } from '@/types/actions';
 import {
   createClient,
@@ -52,6 +53,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
         isCurrentAddressSameAsPermanentAddress: false,
         state: 'Maharashtra',
         permanentState: 'Maharashtra',
+        serviceType: 'FULL_SERVICE' as const,
       },
       learningLicense: {},
       drivingLicense: {},
@@ -68,6 +70,10 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   });
 
   const { trigger, getValues, watch } = methods;
+
+  // Watch service type from the form
+  const serviceType = watch('personalInfo.serviceType');
+
   const { currentStep, goToNext, goToPrevious, isFirstStep, isLastStep } = useStepNavigation(true);
 
   // Watch all form values to detect changes
@@ -88,6 +94,15 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   };
 
   // Define step actions
+  const handleServiceTypeStep = async (data: { serviceType: string }): ActionReturnType => {
+    // Service type step doesn't need server action, just validation
+    console.log('Service type selected:', data.serviceType);
+    return Promise.resolve({
+      error: false,
+      message: 'Service type selected successfully',
+    });
+  };
+
   const handlePersonalStep = async (data: PersonalInfoValues): ActionReturnType => {
     console.log('Processing personal info:', data);
     const result = await createClient(data);
@@ -260,41 +275,50 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   };
 
   // Map step keys to components and their corresponding actions
-  const stepComponents = {
-    personal: {
-      component: <PersonalInfoStep />,
-      onSubmit: (data: unknown) => handlePersonalStep(data as PersonalInfoValues),
-      getData: () => getValues('personalInfo'),
-    },
-    license: {
-      component: <LicenseStep />,
-      onSubmit: (data: unknown) =>
-        handleLicenseStep(
-          data as { learningLicense?: LearningLicenseValues; drivingLicense?: DrivingLicenseValues }
-        ),
-      getData: () => ({
-        learningLicense: getValues('learningLicense'),
-        drivingLicense: getValues('drivingLicense'),
-      }),
-    },
-    plan: {
-      component: <PlanStep branchConfig={branchConfig} currentClientId={undefined} />,
-      onSubmit: (data: unknown) => handlePlanStep(data as PlanValues),
-      getData: () => getValues('plan'),
-    },
-    payment: {
-      component: <PaymentContainer />,
-      onSubmit: (data: unknown) => handlePaymentStep(data as PaymentValues),
-      getData: () => getValues('payment'),
-    },
-  } as const;
-
-  // Derive the step key type from the stepComponents object
-  type StepKey = keyof typeof stepComponents;
+  const stepComponents = React.useMemo(() => {
+    return {
+      service: {
+        component: <ServiceTypeStep />,
+        onSubmit: (data: unknown) => handleServiceTypeStep(data as { serviceType: string }),
+        getData: () => ({ serviceType: getValues('personalInfo.serviceType') }),
+      },
+      personal: {
+        component: <PersonalInfoStep />,
+        onSubmit: (data: unknown) => handlePersonalStep(data as PersonalInfoValues),
+        getData: () => getValues('personalInfo'),
+      },
+      license: {
+        component: <LicenseStep />,
+        onSubmit: (data: unknown) =>
+          handleLicenseStep(
+            data as {
+              learningLicense?: LearningLicenseValues;
+              drivingLicense?: DrivingLicenseValues;
+            }
+          ),
+        getData: () => ({
+          learningLicense: getValues('learningLicense'),
+          drivingLicense: getValues('drivingLicense'),
+        }),
+      },
+      plan: {
+        component: <PlanStep branchConfig={branchConfig} currentClientId={undefined} />,
+        onSubmit: (data: unknown) => handlePlanStep(data as PlanValues),
+        getData: () => getValues('plan'),
+      },
+      payment: {
+        component: <PaymentContainer />,
+        onSubmit: (data: unknown) => handlePaymentStep(data as PaymentValues),
+        getData: () => getValues('payment'),
+      },
+    };
+  }, [branchConfig, getValues, handleLicenseStep, handlePaymentStep, handlePlanStep]);
 
   // Function to get validation fields for a specific step
-  const getStepValidationFields = (step: StepKey): Path<AdmissionFormValues>[] => {
+  const getStepValidationFields = (step: string): Path<AdmissionFormValues>[] => {
     switch (step) {
+      case 'service':
+        return ['personalInfo.serviceType'];
       case 'personal':
         return generateFieldPaths('personalInfo');
       case 'license':
@@ -316,6 +340,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
         isCurrentAddressSameAsPermanentAddress: false,
         state: 'Maharashtra',
         permanentState: 'Maharashtra',
+        serviceType: (serviceType as 'FULL_SERVICE' | 'DRIVING_ONLY') || 'FULL_SERVICE',
       },
       learningLicense: {},
       drivingLicense: {},
@@ -333,10 +358,12 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   // Check if current step has any changes compared to initial values
   const hasCurrentStepChanges = (): boolean => {
     const initialValues = getInitialValues();
-    const currentStepKey = currentStep as StepKey;
+    const currentStepKey = currentStep;
 
     const getCurrentStepValues = () => {
       switch (currentStepKey) {
+        case 'service':
+          return { serviceType: watchedValues.personalInfo?.serviceType };
         case 'personal':
           return watchedValues.personalInfo;
         case 'license':
@@ -355,6 +382,8 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
 
     const getInitialStepValues = () => {
       switch (currentStepKey) {
+        case 'service':
+          return { serviceType: initialValues.personalInfo?.serviceType };
         case 'personal':
           return initialValues.personalInfo;
         case 'license':
@@ -383,7 +412,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   const handleNext = async () => {
     try {
       // Step 1: Generate validation fields on demand for the current step
-      const currentStepKey = currentStep as StepKey;
+      const currentStepKey = currentStep;
       const fieldsToValidate = getStepValidationFields(currentStepKey);
 
       console.log('Fields to validate:', fieldsToValidate);
@@ -451,10 +480,12 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   return (
     <FormProvider {...methods}>
       <div className="h-full flex flex-col py-10 gap-4">
+        <ProgressBar interactive={false} />
+
         {/* Form content - scrollable area */}
         <ScrollArea className="h-[calc(100vh-320px)] pr-10">
           <form className="space-y-8 pb-24">
-            {stepComponents[currentStep as StepKey].component}
+            {stepComponents[currentStep as keyof typeof stepComponents]?.component}
           </form>
         </ScrollArea>
 

@@ -274,7 +274,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.educationalQualification"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Educational Qualification</FormLabel>
+                <FormLabel required>Educational Qualification</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger>
@@ -556,6 +556,35 @@ export const PersonalInfoStep = () => {
                     ))}
                   </RadioGroup>
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 align-center">
+        <TypographyH5 className="col-span-3">Service Type</TypographyH5>
+        <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
+          <FormField
+            control={control}
+            name="personalInfo.serviceType"
+            render={({ field }) => (
+              <FormItem className="col-span-3">
+                <FormControl>
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium">
+                      {field.value === 'FULL_SERVICE'
+                        ? 'Full Service Package'
+                        : 'Driving Training Only'}
+                    </span>
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Service type was selected at the beginning of the admission process and cannot be
+                  changed here.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

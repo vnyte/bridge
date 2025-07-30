@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
+import { getAppointmentStatsAction } from '../actions/appointment-stats';
 
 type AppointmentType = {
   id: string;
@@ -9,28 +10,29 @@ type AppointmentType = {
   type: 'learning' | 'final' | 'rto';
 };
 
-const appointments: AppointmentType[] = [
-  {
-    id: '1',
-    title: 'Learning Test',
-    count: 12,
-    type: 'learning',
-  },
-  {
-    id: '2',
-    title: 'Final Test',
-    count: 23,
-    type: 'final',
-  },
-  {
-    id: '3',
-    title: 'R.T.O. Work',
-    count: 6,
-    type: 'rto',
-  },
-];
+export async function AppointmentsWidget() {
+  const stats = await getAppointmentStatsAction();
 
-export function AppointmentsWidget() {
+  const appointments: AppointmentType[] = [
+    {
+      id: '1',
+      title: 'Learning Test',
+      count: stats.learningTestCount,
+      type: 'learning',
+    },
+    {
+      id: '2',
+      title: 'Final Test',
+      count: stats.finalTestCount,
+      type: 'final',
+    },
+    {
+      id: '3',
+      title: 'R.T.O. Work',
+      count: stats.rtoWorkCount,
+      type: 'rto',
+    },
+  ];
   return (
     <Card className="relative">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

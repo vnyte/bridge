@@ -8,7 +8,7 @@ import { parseAsStringLiteral } from 'nuqs';
 import { Chevron } from './chevron';
 
 // Define the possible steps
-export type StepKey = 'personal' | 'license' | 'plan' | 'payment';
+export type StepKey = 'service' | 'personal' | 'license' | 'plan' | 'payment';
 
 // Define the step configuration
 export type StepConfig = {
@@ -19,19 +19,21 @@ export type StepConfig = {
 
 // Define the steps
 export const STEPS: StepConfig[] = [
+  { key: 'service', label: 'Service Type' },
   { key: 'personal', label: 'Personal Info' },
   { key: 'license', label: 'License' },
   { key: 'plan', label: 'Plan' },
   { key: 'payment', label: 'Payment' },
 ];
 
-// Create a jotai atom for internal state
-const currentStepAtom = atom<StepKey>('personal');
-
-// Define the props for the ProgressBar component
-export type ProgressBarProps = {
-  interactive?: boolean;
+// Function to get steps based on service type
+export const getStepsForServiceType = (): StepConfig[] => {
+  // Always include all steps - license information is needed for both service types
+  return STEPS;
 };
+
+// Create a jotai atom for internal state
+const currentStepAtom = atom<StepKey>('service');
 
 const sortOrder = STEPS.map((step) => step.key);
 
@@ -40,7 +42,7 @@ export const useCurrentStep = (interactive = true) => {
   const [internalStep, setInternalStep] = useAtom(currentStepAtom);
   const [externalStep, setExternalStep] = useQueryState(
     'step',
-    parseAsStringLiteral(sortOrder).withDefault('personal').withOptions({ shallow: !interactive })
+    parseAsStringLiteral(sortOrder).withDefault('service').withOptions({ shallow: !interactive })
   );
 
   useEffect(() => {
@@ -59,10 +61,11 @@ export const useCurrentStep = (interactive = true) => {
 // Utility hook for step navigation
 export const useStepNavigation = (interactive = true) => {
   const { currentStep, setStep, setExternalStep } = useCurrentStep(interactive);
+  const steps = getStepsForServiceType();
 
   const currentIndex = useMemo(() => {
-    return STEPS.findIndex((step) => step.key === currentStep);
-  }, [currentStep]);
+    return steps.findIndex((step) => step.key === currentStep);
+  }, [currentStep, steps]);
 
   const goToStep = useCallback(
     (stepKey: StepKey) => {
@@ -76,19 +79,19 @@ export const useStepNavigation = (interactive = true) => {
 
   const goToNext = useCallback(() => {
     const nextIndex = currentIndex + 1;
-    if (nextIndex < STEPS.length) {
-      const nextStep = STEPS[nextIndex].key;
+    if (nextIndex < steps.length) {
+      const nextStep = steps[nextIndex].key;
       goToStep(nextStep);
     }
-  }, [currentIndex, goToStep]);
+  }, [currentIndex, goToStep, steps]);
 
   const goToPrevious = useCallback(() => {
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0) {
-      const prevStep = STEPS[prevIndex].key;
+      const prevStep = steps[prevIndex].key;
       goToStep(prevStep);
     }
-  }, [currentIndex, goToStep]);
+  }, [currentIndex, goToStep, steps]);
 
   return {
     currentStep,
@@ -97,24 +100,44 @@ export const useStepNavigation = (interactive = true) => {
     goToNext,
     goToPrevious,
     isFirstStep: currentIndex === 0,
-    isLastStep: currentIndex === STEPS.length - 1,
+    isLastStep: currentIndex === steps.length - 1,
   };
 };
 
-export const ProgressBar = ({ interactive = true }: ProgressBarProps) => {
+// Define the props for the ProgressBar component
+export type ProgressBarProps = {
+  interactive?: boolean;
+  onStepClick?: (stepKey: StepKey) => Promise<boolean> | boolean;
+};
+
+export const ProgressBar = ({ interactive = true, onStepClick }: ProgressBarProps) => {
   const { currentStep, goToStep } = useStepNavigation(interactive);
+  const steps = getStepsForServiceType();
+
+  const handleStepClick = async (stepKey: StepKey) => {
+    if (!interactive) return;
+
+    if (onStepClick) {
+      const canNavigate = await onStepClick(stepKey);
+      if (canNavigate) {
+        goToStep(stepKey);
+      }
+    } else {
+      goToStep(stepKey);
+    }
+  };
 
   return (
     <div className="flex justify-center gap-4 mb-8">
-      {STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const isActive = step.key === currentStep;
-        const isPast = STEPS.findIndex((s) => s.key === currentStep) >= index;
+        const isPast = steps.findIndex((s) => s.key === currentStep) >= index;
 
         return (
           <button
             key={step.key}
             type="button"
-            onClick={() => interactive && goToStep(step.key)}
+            onClick={() => handleStepClick(step.key)}
             disabled={!interactive}
             className={cn(
               'relative h-12 w-48 flex items-center justify-center text-sm font-medium transition-colors',

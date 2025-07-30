@@ -1,4 +1,5 @@
 import { pgEnum, pgTable, text, timestamp, uuid, boolean, unique } from 'drizzle-orm/pg-core';
+import { ServiceTypeEnum } from '../enums';
 
 export const BloodGroupEnum = pgEnum('blood_group', [
   'A+',
@@ -72,6 +73,8 @@ export const ClientTable = pgTable(
     permanentPincode: text('permanent_pincode').notNull(),
 
     citizenStatus: CitizenStatusEnum().default('BIRTH'),
+
+    serviceType: ServiceTypeEnum().notNull(),
 
     branchId: uuid('branch_id').notNull(),
 

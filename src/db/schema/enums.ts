@@ -9,3 +9,5 @@ export const LicenseClassEnum = pgEnum('license_classes', [
   'HGV',
   'HPV',
 ]);
+
+export const ServiceTypeEnum = pgEnum('service_type', ['FULL_SERVICE', 'DRIVING_ONLY']);

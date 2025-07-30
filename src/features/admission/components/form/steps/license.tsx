@@ -4,7 +4,6 @@ import { useFormContext } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
-import { LicenseClassEnum } from '@/db/schema/enums';
 import { TypographyH5 } from '@/components/ui/typography';
 import { AdmissionFormValues } from '@/features/admission/types';
 import { MultiSelect } from '@/components/ui/multi-select';
@@ -12,11 +11,21 @@ import { MultiSelect } from '@/components/ui/multi-select';
 export const LicenseStep = () => {
   const { control } = useFormContext<AdmissionFormValues>();
 
-  // Create options array for MultiSelect from enum values
-  const licenseClassOptions = LicenseClassEnum.enumValues.map((licenseClass) => ({
-    label: licenseClass,
-    value: licenseClass,
-  }));
+  // Create options array for MultiSelect - showing only the 3 most common license types
+  const licenseClassOptions = [
+    {
+      label: 'LMV (Light Motor Vehicle)',
+      value: 'LMV',
+    },
+    {
+      label: 'MCWG (Motorcycle with Gear)',
+      value: 'MCWG',
+    },
+    {
+      label: 'MCWOG (Motorcycle without Gear)',
+      value: 'MCWOG',
+    },
+  ];
 
   return (
     <div className="space-y-10">

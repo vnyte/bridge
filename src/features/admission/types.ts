@@ -7,6 +7,7 @@ import {
   CitizenStatusEnum,
   EducationalQualificationEnum,
 } from '@/db/schema/client/columns';
+import { ServiceTypeEnum } from '@/db/schema/enums';
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
 import { DrivingLicenseTable } from '@/db/schema/driving-licenses/columns';
 import { PlanTable } from '@/db/schema/plan/columns';
@@ -39,7 +40,9 @@ export const personalInfoSchema = createInsertSchema(ClientTable, {
   gender: z.enum(GenderEnum.enumValues, {
     required_error: 'Gender is required',
   }),
-  educationalQualification: z.enum(EducationalQualificationEnum.enumValues).optional().nullable(),
+  educationalQualification: z.enum(EducationalQualificationEnum.enumValues, {
+    required_error: 'Educational qualification is required',
+  }),
 
   address: z.string().min(1, 'Address is required'),
   city: z.string().min(1, 'City is required'),
@@ -55,6 +58,10 @@ export const personalInfoSchema = createInsertSchema(ClientTable, {
 
   citizenStatus: z.enum(CitizenStatusEnum.enumValues, {
     required_error: 'Citizen status is required',
+  }),
+
+  serviceType: z.enum(ServiceTypeEnum.enumValues, {
+    required_error: 'Service type is required',
   }),
 });
 
@@ -156,6 +163,13 @@ export const paymentSchema = createInsertSchema(PaymentTable, {
   paymentDueDate: z.string().nullable().optional(),
 }).omit({ createdAt: true, updatedAt: true });
 
+// Service type schema (separate from personal info for the first step)
+export const serviceTypeSchema = z.object({
+  serviceType: z.enum(ServiceTypeEnum.enumValues, {
+    required_error: 'Service type is required',
+  }),
+});
+
 // Function to create admission form schema with operating hours validation
 export const createAdmissionFormSchema = (operatingHours?: { start: string; end: string }) => {
   return z.object({
@@ -176,6 +190,7 @@ export const admissionFormSchema = z.object({
   payment: paymentSchema,
 });
 
+export type ServiceTypeValues = z.infer<typeof serviceTypeSchema>;
 export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 export type LearningLicenseValues = z.infer<typeof learningLicenseSchema>;
 export type DrivingLicenseValues = z.infer<typeof drivingLicenseSchema>;

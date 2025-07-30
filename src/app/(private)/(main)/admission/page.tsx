@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { TypographyH4 } from '@/components/ui/typography';
 import MultistepForm from '@/features/admission/components/form/multistep-form';
-import { ProgressBar } from '@/features/admission/components/progress-bar/progress-bar';
 import { getBranchConfig } from '@/features/admission/server/action';
 
 export default async function AdmissionPage() {
@@ -24,7 +23,6 @@ export default async function AdmissionPage() {
         <TypographyH4>Admission Form</TypographyH4>
       </header>
       <Suspense fallback={<div>Loading...</div>}>
-        <ProgressBar interactive={false} />
         <MultistepForm branchConfig={branchConfigResult.data} />
       </Suspense>
     </div>

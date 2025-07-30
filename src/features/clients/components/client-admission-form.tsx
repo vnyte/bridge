@@ -1,7 +1,15 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useForm, FormProvider, Path } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
@@ -21,6 +29,7 @@ import { toast } from 'sonner';
 import { PersonalInfoStep } from '@/features/admission/components/form/steps/personal-info';
 import { LicenseStep } from '@/features/admission/components/form/steps/license';
 import { PlanStep } from '@/features/admission/components/form/steps/plan';
+import { ServiceTypeStep } from '@/features/admission/components/form/steps/service-type';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   useStepNavigation,
@@ -69,10 +78,11 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         guardianFirstName: client.guardianFirstName || '',
         guardianMiddleName: client.guardianMiddleName || '',
         guardianLastName: client.guardianLastName || '',
-        birthDate: client.birthDate,
+        birthDate:
+          typeof client.birthDate === 'string' ? new Date(client.birthDate) : client.birthDate,
         bloodGroup: client.bloodGroup,
         gender: client.gender,
-        educationalQualification: client.educationalQualification || '',
+        educationalQualification: client.educationalQualification || 'BELOW_10TH',
         phoneNumber: client.phoneNumber,
         alternativePhoneNumber: client.alternativePhoneNumber || '',
         email: client.email || '',
@@ -87,6 +97,7 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         permanentState: client.permanentState,
         permanentPincode: client.permanentPincode,
         citizenStatus: client.citizenStatus || 'BIRTH',
+        serviceType: client.serviceType || 'FULL_SERVICE',
         branchId: client.branchId,
         tenantId: client.tenantId,
       },
@@ -150,7 +161,24 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
   });
 
   const { trigger, getValues, reset, watch } = methods;
-  const { currentStep, goToNext, goToPrevious, isFirstStep, isLastStep } = useStepNavigation(true);
+  const { currentStep, goToNext, goToPrevious, isFirstStep, isLastStep, goToStep } =
+    useStepNavigation(true);
+
+  // Start at personal step for existing clients (skip service type selection on initial load)
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Unsaved changes confirmation dialog
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [pendingStepNavigation, setPendingStepNavigation] = useState<StepKey | null>(null);
+
+  useEffect(() => {
+    if (!hasInitialized && currentStep === 'service') {
+      goToStep('personal');
+      setHasInitialized(true);
+    } else if (!hasInitialized) {
+      setHasInitialized(true);
+    }
+  }, [currentStep, goToStep, hasInitialized]);
 
   // Watch all form values to detect changes
   const watchedValues = watch();
@@ -324,6 +352,11 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
 
   // Map step keys to components and their corresponding actions
   const stepComponents = {
+    service: {
+      component: <ServiceTypeStep disabled={true} />,
+      onSubmit: (data: unknown) => handlePersonalStep(data as PersonalInfoValues),
+      getData: () => ({ serviceType: getValues('personalInfo.serviceType') }),
+    },
     personal: {
       component: <PersonalInfoStep />,
       onSubmit: (data: unknown) => handlePersonalStep(data as PersonalInfoValues),
@@ -385,6 +418,8 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
 
   const getStepValidationFields = (step: StepKey): Path<ClientFormValues>[] => {
     switch (step) {
+      case 'service':
+        return ['personalInfo.serviceType' as Path<ClientFormValues>];
       case 'personal':
         return generateFieldPaths('personalInfo');
       case 'license':
@@ -465,6 +500,8 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
 
     const getCurrentStepValues = () => {
       switch (currentStepKey) {
+        case 'service':
+          return { serviceType: watchedValues.personalInfo?.serviceType };
         case 'personal':
           return watchedValues.personalInfo;
         case 'license':
@@ -483,6 +520,8 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
 
     const getOriginalStepValues = () => {
       switch (currentStepKey) {
+        case 'service':
+          return { serviceType: originalValues.personalInfo.serviceType };
         case 'personal':
           return originalValues.personalInfo;
         case 'license':
@@ -510,11 +549,83 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
     toast.success('Changes discarded successfully');
   };
 
+  // Handle step navigation with unsaved changes check
+  const handleStepNavigation = async (targetStep: StepKey): Promise<boolean> => {
+    if (targetStep === currentStep) return true; // Same step, no navigation needed
+
+    const hasChanges = hasCurrentStepChanges();
+
+    if (hasChanges) {
+      setPendingStepNavigation(targetStep);
+      setShowUnsavedChangesDialog(true);
+      return false; // Prevent navigation for now
+    }
+
+    return true; // Allow navigation
+  };
+
+  // Handle confirmation dialog actions
+  const handleConfirmNavigation = () => {
+    // Reset the current step's data to original values before navigating
+    const originalValues = getDefaultValues();
+    const currentStepKey = currentStep as StepKey;
+
+    switch (currentStepKey) {
+      case 'service':
+        reset({
+          ...getValues(),
+          personalInfo: {
+            ...getValues('personalInfo'),
+            serviceType: originalValues.personalInfo.serviceType,
+          },
+        });
+        break;
+      case 'personal':
+        reset({
+          ...getValues(),
+          personalInfo: originalValues.personalInfo,
+        });
+        break;
+      case 'license':
+        reset({
+          ...getValues(),
+          learningLicense: originalValues.learningLicense,
+          drivingLicense: originalValues.drivingLicense,
+        });
+        break;
+      case 'plan':
+        reset({
+          ...getValues(),
+          plan: originalValues.plan,
+        });
+        break;
+      case 'payment':
+        reset({
+          ...getValues(),
+          payment: originalValues.payment,
+        });
+        break;
+    }
+
+    toast.success('Changes discarded successfully');
+
+    if (pendingStepNavigation) {
+      goToStep(pendingStepNavigation);
+    }
+    setShowUnsavedChangesDialog(false);
+    setPendingStepNavigation(null);
+  };
+
+  const handleCancelNavigation = () => {
+    setShowUnsavedChangesDialog(false);
+    setPendingStepNavigation(null);
+  };
+
   return (
     <FormProvider {...methods}>
       <div className="h-full flex flex-col py-2 gap-4">
         {/* Progress Bar */}
-        <ProgressBar interactive={true} />
+        <ProgressBar interactive={true} onStepClick={handleStepNavigation} />
 
         <ScrollArea className="h-[calc(100vh-20rem)] pr-10">
           <form className="space-y-8 pb-24">
@@ -557,6 +668,27 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
           </div>
         </div>
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <Dialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes in the current step. Are you sure you want to navigate away?
+              Your changes will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelNavigation}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmNavigation}>
+              Discard Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </FormProvider>
   );
 };
