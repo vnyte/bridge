@@ -43,23 +43,25 @@ export const calculateLicenseFees = (
   if (hasExistingLearners) {
     // Student already has learners license - only driving license needed
     if (licenseClasses.length === 1) {
-      governmentFees = MAHARASHTRA_RTO_FEES.DRIVING_LICENSE;  // ₹450
+      governmentFees = MAHARASHTRA_RTO_FEES.DRIVING_LICENSE; // ₹450
       breakdown = 'Driving License only (has existing learners)';
     } else {
       // Multiple classes - first class ₹450, additional classes ₹1016 each
-      governmentFees = MAHARASHTRA_RTO_FEES.DRIVING_LICENSE + 
-                      (MAHARASHTRA_RTO_FEES.ADDITIONAL_CLASS * (licenseClasses.length - 1));
+      governmentFees =
+        MAHARASHTRA_RTO_FEES.DRIVING_LICENSE +
+        MAHARASHTRA_RTO_FEES.ADDITIONAL_CLASS * (licenseClasses.length - 1);
       breakdown = `Driving License (₹450) + ${licenseClasses.length - 1} additional classes (₹1016 each)`;
     }
   } else {
     // New student - needs both learners and driving license
     if (licenseClasses.length === 1) {
-      governmentFees = MAHARASHTRA_RTO_FEES.TOTAL_GOVERNMENT_FEES;  // ₹650
+      governmentFees = MAHARASHTRA_RTO_FEES.TOTAL_GOVERNMENT_FEES; // ₹650
       breakdown = 'Learning License (₹200) + Driving License (₹450)';
     } else {
       // Multiple classes - learning ₹200 + driving ₹450 + additional classes ₹1016 each
-      governmentFees = MAHARASHTRA_RTO_FEES.TOTAL_GOVERNMENT_FEES + 
-                      (MAHARASHTRA_RTO_FEES.ADDITIONAL_CLASS * (licenseClasses.length - 1));
+      governmentFees =
+        MAHARASHTRA_RTO_FEES.TOTAL_GOVERNMENT_FEES +
+        MAHARASHTRA_RTO_FEES.ADDITIONAL_CLASS * (licenseClasses.length - 1);
       breakdown = `Learning License (₹200) + Driving License (₹450) + ${licenseClasses.length - 1} additional classes (₹1016 each)`;
     }
   }
@@ -67,7 +69,7 @@ export const calculateLicenseFees = (
   return {
     governmentFees,
     total: governmentFees + serviceCharge,
-    breakdown
+    breakdown,
   };
 };
 
@@ -79,8 +81,101 @@ export const getTotalLicenseFees = (serviceCharge: number = 0): number => {
 };
 
 /**
- * Helper function to format currency
+ * RTO Services Fee Structure
+ * These are the government fees + typical service charges for various RTO services
  */
-export const formatINR = (amount: number): string => {
-  return `₹${amount.toLocaleString('en-IN')}`;
+export const RTO_SERVICE_FEES = {
+  LICENSE_RENEWAL: {
+    governmentFees: 200,
+    serviceCharge: 800,
+    urgentFees: 300,
+    description: 'Driving License Renewal',
+  },
+  ADDRESS_CHANGE: {
+    governmentFees: 100,
+    serviceCharge: 500,
+    urgentFees: 200,
+    description: 'Address Change on License',
+  },
+  DUPLICATE_LICENSE: {
+    governmentFees: 200,
+    serviceCharge: 600,
+    urgentFees: 300,
+    description: 'Duplicate License Issuance',
+  },
+  INTERNATIONAL_PERMIT: {
+    governmentFees: 1000,
+    serviceCharge: 1500,
+    urgentFees: 500,
+    description: 'International Driving Permit',
+  },
+  NEW_LICENSE: {
+    governmentFees: 650, // Learning + Driving
+    serviceCharge: 1200,
+    urgentFees: 400,
+    description: 'New Driving License (Learning + Permanent)',
+  },
+  LEARNER_LICENSE: {
+    governmentFees: 200,
+    serviceCharge: 600,
+    urgentFees: 200,
+    description: 'Learner License Only',
+  },
+  CATEGORY_ADDITION: {
+    governmentFees: 1016,
+    serviceCharge: 1000,
+    urgentFees: 400,
+    description: 'Add New Vehicle Category',
+  },
+  LICENSE_TRANSFER: {
+    governmentFees: 200,
+    serviceCharge: 800,
+    urgentFees: 300,
+    description: 'Transfer License to Another State',
+  },
+  NAME_CHANGE: {
+    governmentFees: 100,
+    serviceCharge: 500,
+    urgentFees: 200,
+    description: 'Name Change on License',
+  },
+  ENDORSEMENT_REMOVAL: {
+    governmentFees: 200,
+    serviceCharge: 600,
+    urgentFees: 250,
+    description: 'Remove Endorsement from License',
+  },
+} as const;
+
+/**
+ * Get fee structure for a specific RTO service type
+ */
+export const getRTOServiceFees = (serviceType: keyof typeof RTO_SERVICE_FEES) => {
+  const fees = RTO_SERVICE_FEES[serviceType];
+  return {
+    ...fees,
+    totalAmount: fees.governmentFees + fees.serviceCharge,
+    totalWithUrgent: fees.governmentFees + fees.serviceCharge + fees.urgentFees,
+  };
+};
+
+/**
+ * Calculate RTO service fees with priority
+ */
+export const calculateRTOServiceFees = (
+  serviceType: keyof typeof RTO_SERVICE_FEES,
+  priority: 'NORMAL' | 'TATKAL' = 'NORMAL',
+  customServiceCharge?: number
+) => {
+  const baseFees = RTO_SERVICE_FEES[serviceType];
+  const serviceCharge = customServiceCharge ?? baseFees.serviceCharge;
+  const urgentFees = priority === 'NORMAL' ? 0 : baseFees.urgentFees;
+
+  return {
+    governmentFees: baseFees.governmentFees,
+    serviceCharge,
+    urgentFees,
+    totalAmount: baseFees.governmentFees + serviceCharge + urgentFees,
+    description: baseFees.description,
+  };
 };

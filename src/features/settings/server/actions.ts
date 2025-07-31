@@ -18,6 +18,7 @@ export async function getBranchSettings(branchId: string) {
       .select({
         workingDays: BranchTable.workingDays,
         operatingHours: BranchTable.operatingHours,
+        defaultRtoOffice: BranchTable.defaultRtoOffice,
       })
       .from(BranchTable)
       .where(eq(BranchTable.id, branchId))
@@ -32,6 +33,7 @@ export async function getBranchSettings(branchId: string) {
       data: {
         workingDays: branch[0].workingDays || DEFAULT_WORKING_DAYS,
         operatingHours: branch[0].operatingHours || DEFAULT_OPERATING_HOURS,
+        defaultRtoOffice: branch[0].defaultRtoOffice || '',
       },
     };
   } catch (error) {
@@ -59,6 +61,7 @@ export async function updateBranchSettings(branchId: string, settings: BranchSet
       .set({
         workingDays: validatedSettings.workingDays,
         operatingHours: validatedSettings.operatingHours,
+        defaultRtoOffice: validatedSettings.defaultRtoOffice || null,
         updatedAt: new Date(),
       })
       .where(eq(BranchTable.id, branchId));

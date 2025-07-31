@@ -8,7 +8,7 @@ export default function Home() {
     <div className="h-full">
       <div className="flex justify-end gap-4">
         <Button variant="secondary" size="lg">
-          <Link href="/admission" className="flex gap-2 items-center text-primary">
+          <Link href="/rto-services/add" className="flex gap-2 items-center text-primary">
             <PlusIcon /> RTO Services
           </Link>
         </Button>

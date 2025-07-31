@@ -67,12 +67,17 @@ export async function createTenant(unsafeData: OnboardingFormValues) {
         branches: branches.map((b) => b.id),
         isOnboardingComplete: true,
         isOwner: true,
+        defaultOrganizationId: createdOrgIds[0], // Store the default org ID
       },
     });
+
+    console.log('Tenant created successfully. Organizations created:', createdOrgIds);
 
     return {
       error: false,
       message: 'Tenant created successfully',
+      organizationIds: createdOrgIds,
+      primaryOrganizationId: createdOrgIds[0], // Return the primary org ID
     };
   } catch (error) {
     console.error('Error during tenant/branch creation:', error);

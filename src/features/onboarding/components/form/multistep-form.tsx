@@ -69,6 +69,7 @@ export const MultistepForm = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [serverActionCompleted, setServerActionCompleted] = useState(false);
   const [animationsCompleted, setAnimationsCompleted] = useState(false);
+  const [createdOrgIds, setCreatedOrgIds] = useState<string[]>([]);
 
   // Handle form submission
   const onSubmit: SubmitHandler<OnboardingFormValues> = async (data) => {
@@ -85,6 +86,18 @@ export const MultistepForm = () => {
         toast.error(response.message);
       } else {
         // On success, mark server action as completed
+        console.log('Tenant creation response:', response);
+        if (response.organizationIds?.length) {
+          setCreatedOrgIds(response.organizationIds);
+        }
+
+        // Wait for Clerk to propagate metadata changes
+        // Typical propagation time is 200-500ms, we'll wait up to 1 second
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Force token refresh to get the updated metadata
+        await getToken({ skipCache: true });
+
         setServerActionCompleted(true);
       }
     } catch (error) {
@@ -110,18 +123,36 @@ export const MultistepForm = () => {
   }, [serverActionCompleted, animationsCompleted]);
 
   const handleRedirectToDashboard = async () => {
-    // Refresh the session to ensure latest metadata is loaded
-    await getToken({ skipCache: true });
+    // Get the first organization ID to set as active
+    const targetOrgId = createdOrgIds[0] || userMemberships.data?.[0]?.organization?.id;
 
-    // Ensure organization is selected before redirecting
-    if (userMemberships.data?.length) {
-      await setActive({ organization: userMemberships.data[0].organization.id });
+    if (targetOrgId) {
+      console.log('Setting active organization:', targetOrgId);
+      try {
+        await setActive({ organization: targetOrgId });
+        console.log('Successfully set active organization');
+
+        // Wait for Clerk to propagate the changes
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // After setting active org, refresh the token to ensure
+        // the active organization context is properly set
+        await getToken({ skipCache: true });
+
+        // Double-check by getting a fresh token one more time
+        await getToken({ skipCache: true });
+      } catch (error) {
+        console.error('Failed to set active organization:', error);
+      }
     }
 
-    // Add delay to ensure metadata propagation and organization context is set
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Refresh server components to ensure they have latest auth state
+    router.refresh();
 
-    // Use Next.js router instead of window.location
+    // Small delay before redirect to ensure everything is synced
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Redirect to dashboard
     router.push('/dashboard');
   };
 

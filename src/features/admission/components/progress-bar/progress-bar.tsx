@@ -7,18 +7,17 @@ import { cn } from '@/lib/utils';
 import { parseAsStringLiteral } from 'nuqs';
 import { Chevron } from './chevron';
 
-// Define the possible steps
-export type StepKey = 'service' | 'personal' | 'license' | 'plan' | 'payment';
-
-// Define the step configuration
-export type StepConfig = {
-  key: StepKey;
+// Define the step configuration (generic)
+export type StepConfig<T extends string = string> = {
+  key: T;
   label: string;
   description?: string;
 };
 
-// Define the steps
-export const STEPS: StepConfig[] = [
+// Define admission form steps
+export const ADMISSION_STEPS: StepConfig<
+  'service' | 'personal' | 'license' | 'plan' | 'payment'
+>[] = [
   { key: 'service', label: 'Service Type' },
   { key: 'personal', label: 'Personal Info' },
   { key: 'license', label: 'License' },
@@ -26,23 +25,32 @@ export const STEPS: StepConfig[] = [
   { key: 'payment', label: 'Payment' },
 ];
 
-// Function to get steps based on service type
-export const getStepsForServiceType = (): StepConfig[] => {
-  // Always include all steps - license information is needed for both service types
-  return STEPS;
+// Legacy export for backward compatibility
+export const STEPS = ADMISSION_STEPS;
+export type StepKey = 'service' | 'personal' | 'license' | 'plan' | 'payment';
+
+// Function to get steps based on service type (backward compatibility)
+export const getStepsForServiceType = (): typeof ADMISSION_STEPS => {
+  return ADMISSION_STEPS;
 };
 
-// Create a jotai atom for internal state
-const currentStepAtom = atom<StepKey>('service');
+// Create a jotai atom for internal state (generic)
+const createStepAtom = <T extends string>(defaultStep: T) => atom<T>(defaultStep);
 
-const sortOrder = STEPS.map((step) => step.key);
+// Legacy admission step atom (removed - using generic version)
 
-// Utility hook to get the current step
-export const useCurrentStep = (interactive = true) => {
-  const [internalStep, setInternalStep] = useAtom(currentStepAtom);
+// Generic utility hook to get the current step
+export const useCurrentStep = <T extends string>(
+  steps: StepConfig<T>[],
+  defaultStep: T,
+  interactive = true
+) => {
+  const stepAtom = useMemo(() => createStepAtom(defaultStep), [defaultStep]);
+  const [internalStep, setInternalStep] = useAtom(stepAtom);
+  const sortOrder = steps.map((step) => step.key);
   const [externalStep, setExternalStep] = useQueryState(
     'step',
-    parseAsStringLiteral(sortOrder).withDefault('service').withOptions({ shallow: !interactive })
+    parseAsStringLiteral(sortOrder).withDefault(defaultStep).withOptions({ shallow: !interactive })
   );
 
   useEffect(() => {
@@ -58,17 +66,20 @@ export const useCurrentStep = (interactive = true) => {
   };
 };
 
-// Utility hook for step navigation
-export const useStepNavigation = (interactive = true) => {
-  const { currentStep, setStep, setExternalStep } = useCurrentStep(interactive);
-  const steps = getStepsForServiceType();
+// Generic utility hook for step navigation
+export const useStepNavigation = <T extends string>(
+  steps: StepConfig<T>[],
+  defaultStep: T,
+  interactive = true
+) => {
+  const { currentStep, setStep, setExternalStep } = useCurrentStep(steps, defaultStep, interactive);
 
   const currentIndex = useMemo(() => {
     return steps.findIndex((step) => step.key === currentStep);
   }, [currentStep, steps]);
 
   const goToStep = useCallback(
-    (stepKey: StepKey) => {
+    (stepKey: T) => {
       setStep(stepKey);
       if (interactive) {
         setExternalStep(stepKey);
@@ -104,17 +115,23 @@ export const useStepNavigation = (interactive = true) => {
   };
 };
 
-// Define the props for the ProgressBar component
-export type ProgressBarProps = {
+// Define the props for the ProgressBar component (generic)
+export type ProgressBarProps<T extends string = string> = {
+  steps: StepConfig<T>[];
+  defaultStep: T;
   interactive?: boolean;
-  onStepClick?: (stepKey: StepKey) => Promise<boolean> | boolean;
+  onStepClick?: (stepKey: T) => Promise<boolean> | boolean;
 };
 
-export const ProgressBar = ({ interactive = true, onStepClick }: ProgressBarProps) => {
-  const { currentStep, goToStep } = useStepNavigation(interactive);
-  const steps = getStepsForServiceType();
+export const ProgressBar = <T extends string = string>({
+  steps,
+  defaultStep,
+  interactive = true,
+  onStepClick,
+}: ProgressBarProps<T>) => {
+  const { currentStep, goToStep } = useStepNavigation(steps, defaultStep, interactive);
 
-  const handleStepClick = async (stepKey: StepKey) => {
+  const handleStepClick = async (stepKey: T) => {
     if (!interactive) return;
 
     if (onStepClick) {

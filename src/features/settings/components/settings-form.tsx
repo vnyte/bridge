@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, MapPin } from 'lucide-react';
+import { RTOOfficeSelect } from '@/components/ui/rto-office-select';
 import { toast } from 'sonner';
 import { branchSettingsSchema, type BranchSettings } from '../types';
 import { updateBranchSettings } from '../server/actions';
@@ -31,6 +32,7 @@ export const SettingsForm = ({ branchId, initialData }: SettingsFormProps) => {
     defaultValues: initialData || {
       workingDays: DEFAULT_WORKING_DAYS,
       operatingHours: DEFAULT_OPERATING_HOURS,
+      defaultRtoOffice: '',
     },
   });
 
@@ -43,6 +45,7 @@ export const SettingsForm = ({ branchId, initialData }: SettingsFormProps) => {
   } = form;
   const workingDays = watch('workingDays');
   const operatingHours = watch('operatingHours');
+  const defaultRtoOffice = watch('defaultRtoOffice');
 
   const handleWorkingDayToggle = (dayId: number) => {
     const currentDays = workingDays || [];
@@ -140,6 +143,43 @@ export const SettingsForm = ({ branchId, initialData }: SettingsFormProps) => {
               {operatingHours?.start || DEFAULT_OPERATING_HOURS.start} -{' '}
               {operatingHours?.end || DEFAULT_OPERATING_HOURS.end}
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Default RTO Office Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Default RTO Office
+          </CardTitle>
+          <CardDescription>
+            Set the default RTO office for new RTO service applications from this branch
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="default-rto-office">RTO Office</Label>
+              <RTOOfficeSelect
+                value={defaultRtoOffice || ''}
+                onValueChange={(value) => setValue('defaultRtoOffice', value)}
+                placeholder="Select default RTO office..."
+              />
+              {errors.defaultRtoOffice && (
+                <p className="text-sm text-red-500">{errors.defaultRtoOffice.message}</p>
+              )}
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Current default:</strong>{' '}
+                {defaultRtoOffice ? defaultRtoOffice : 'No default RTO office set'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                This will be pre-selected when creating new RTO service applications
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

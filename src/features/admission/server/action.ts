@@ -12,11 +12,7 @@ import {
   paymentSchema,
 } from '../types';
 import { auth } from '@clerk/nextjs/server';
-import {
-  getCurrentOrganizationBranchId,
-  getCurrentOrganizationBranch,
-  getCurrentOrganizationTenantId,
-} from '@/server/db/branch';
+import { getCurrentOrganizationBranchId, getCurrentOrganizationBranch } from '@/server/db/branch';
 import { ActionReturnType } from '@/types/actions';
 import {
   upsertClientInDB,
@@ -50,14 +46,9 @@ export const createClient = async (
   }
 
   const branchId = await getCurrentOrganizationBranchId();
-  const tenantId = await getCurrentOrganizationTenantId();
 
   if (!branchId) {
     return { error: true, message: 'Branch not found' };
-  }
-
-  if (!tenantId) {
-    return { error: true, message: 'Tenant not found' };
   }
 
   try {

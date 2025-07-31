@@ -8,7 +8,13 @@ export async function getAppointmentStatistics() {
   const tenantId = await getCurrentOrganizationTenantId();
 
   if (!tenantId) {
-    throw new Error('No tenant found');
+    console.error('getAppointmentStatistics: No tenant found - returning empty statistics');
+    // Return empty statistics instead of throwing
+    return {
+      learningTestCount: 0,
+      finalTestCount: 0,
+      rtoWorkCount: 0,
+    };
   }
 
   // Learning Test Count: Clients with FULL_SERVICE who don't have a learning license number yet

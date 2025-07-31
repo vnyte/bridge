@@ -6,6 +6,7 @@ export const branchSettingsSchema = z.object({
     start: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
     end: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
   }),
+  defaultRtoOffice: z.string().optional(),
 });
 
 export type BranchSettings = z.infer<typeof branchSettingsSchema>;

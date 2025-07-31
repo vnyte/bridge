@@ -16,6 +16,9 @@ export const BranchTable = pgTable('branches', {
   // Service charges configuration
   licenseServiceCharge: integer('license_service_charge').default(500), // Charge for handling license process
 
+  // Default RTO office for this branch
+  defaultRtoOffice: text('default_rto_office'), // RTO office name (e.g., 'Mumbai South RTO')
+
   tenantId: uuid('tenant_id').notNull(),
   createdBy: text('created_by').notNull(),
 

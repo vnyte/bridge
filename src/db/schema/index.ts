@@ -41,3 +41,9 @@ export * from './form-prints/relations';
 
 export * from './staff/columns';
 export * from './staff/relations';
+
+export * from './rto-services/columns';
+export * from './rto-services/relations';
+
+export * from './rto-clients/columns';
+export * from './rto-clients/relations';
