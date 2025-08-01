@@ -473,12 +473,15 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
 
   return (
     <FormProvider {...methods}>
-      <div className="h-full flex flex-col py-10 gap-4">
+      <div
+        className="h-full flex flex-col py-10 gap-4"
+        data-testid={`admission-step-${currentStep}`}
+      >
         <ProgressBar steps={ADMISSION_STEPS} defaultStep="service" interactive={false} />
 
         {/* Form content - scrollable area */}
         <ScrollArea className="h-[calc(100vh-320px)] pr-10">
-          <form className="space-y-8 pb-24">
+          <form className="space-y-8 pb-24" data-testid="admission-multistep-form">
             {stepComponents[currentStep as keyof typeof stepComponents]?.component}
           </form>
         </ScrollArea>
@@ -490,6 +493,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
             variant="outline"
             onClick={goToPrevious}
             disabled={isFirstStep || isSubmitting}
+            data-testid="admission-previous-button"
           >
             Previous
           </Button>
@@ -499,6 +503,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
             onClick={handleNext}
             disabled={isSubmitting}
             isLoading={isSubmitting}
+            data-testid={isLastStep ? 'admission-submit-button' : 'admission-next-button'}
           >
             {isLastStep ? 'Submit' : 'Next'}
           </Button>

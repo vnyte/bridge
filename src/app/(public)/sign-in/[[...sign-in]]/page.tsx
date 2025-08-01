@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" data-testid="signin-page">
       <div className="relative hidden w-1/2 lg:block">
         <Image src="/login.png" alt="Login" fill className="object-cover object-center" priority />
       </div>

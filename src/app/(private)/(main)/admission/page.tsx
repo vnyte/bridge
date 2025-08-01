@@ -18,9 +18,9 @@ export default async function AdmissionPage() {
   }
 
   return (
-    <div>
+    <div data-testid="admission-page">
       <header className="pb-6">
-        <TypographyH4>Admission Form</TypographyH4>
+        <TypographyH4 data-testid="admission-page-heading">Admission Form</TypographyH4>
       </header>
       <Suspense fallback={<div>Loading...</div>}>
         <MultistepForm branchConfig={branchConfigResult.data} />

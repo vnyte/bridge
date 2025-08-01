@@ -10,8 +10,8 @@ export default async function ClientsPage({
 }) {
   const params = await searchParams;
   return (
-    <div className="space-y-10">
-      <TypographyH4>Clients</TypographyH4>
+    <div className="space-y-10" data-testid="clients-page">
+      <TypographyH4 data-testid="clients-page-heading">Clients</TypographyH4>
       <Suspense fallback={<div>Loading filters...</div>}>
         <ClientFilters />
       </Suspense>

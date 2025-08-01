@@ -64,6 +64,7 @@ export const ClientFilters = () => {
     <div className="flex justify-between gap-4">
       <div className="flex gap-4">
         <Input
+          data-testid="clients-search-input"
           value={name || ''}
           onChange={(e) => setName(e.target.value)}
           placeholder="Search by name"

@@ -87,7 +87,9 @@ export const PersonalInfoStep = () => {
     <div className="space-y-10">
       {/* Basic Information */}
       <div className="grid grid-cols-12">
-        <TypographyH5 className="col-span-3">Personal Details</TypographyH5>
+        <TypographyH5 className="col-span-3" data-testid="admission-personal-info-heading">
+          Personal Details
+        </TypographyH5>
 
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
           <FormField
@@ -135,7 +137,12 @@ export const PersonalInfoStep = () => {
               <FormItem>
                 <FormLabel required>Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="First" value={field.value || ''} onChange={field.onChange} />
+                  <Input
+                    data-testid="admission-firstName-input"
+                    placeholder="First"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -159,7 +166,12 @@ export const PersonalInfoStep = () => {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input placeholder="Last" value={field.value || ''} onChange={field.onChange} />
+                  <Input
+                    data-testid="admission-lastName-input"
+                    placeholder="Last"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -309,6 +321,7 @@ export const PersonalInfoStep = () => {
                 <FormLabel required>Phone Number</FormLabel>
                 <FormControl>
                   <Input
+                    data-testid="admission-phoneNumber-input"
                     placeholder="Phone number"
                     value={field.value || ''}
                     onChange={field.onChange}
@@ -349,6 +362,7 @@ export const PersonalInfoStep = () => {
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input
+                    data-testid="admission-email-input"
                     type="email"
                     placeholder="Email address"
                     value={field.value || ''}
@@ -373,6 +387,7 @@ export const PersonalInfoStep = () => {
                 <FormLabel required>Full Address</FormLabel>
                 <FormControl>
                   <Input
+                    data-testid="admission-address-input"
                     placeholder="Address"
                     value={field.value || ''}
                     onChange={field.onChange}
@@ -390,7 +405,12 @@ export const PersonalInfoStep = () => {
               <FormItem>
                 <FormLabel required>City</FormLabel>
                 <FormControl>
-                  <Input placeholder="City" value={field.value || ''} onChange={field.onChange} />
+                  <Input
+                    data-testid="admission-city-input"
+                    placeholder="City"
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -424,6 +444,7 @@ export const PersonalInfoStep = () => {
                 <FormLabel required>Pincode</FormLabel>
                 <FormControl>
                   <Input
+                    data-testid="admission-postalCode-input"
                     placeholder="Pincode"
                     value={field.value || ''}
                     onChange={field.onChange}

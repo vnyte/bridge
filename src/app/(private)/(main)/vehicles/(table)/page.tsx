@@ -7,7 +7,7 @@ export default async function VehiclesPage({
 }) {
   const params = await searchParams;
   return (
-    <div>
+    <div data-testid="vehicles-page">
       <Vehicles name={params.name} />
     </div>
   );

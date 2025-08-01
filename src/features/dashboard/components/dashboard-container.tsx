@@ -25,7 +25,7 @@ export const DashboardContainer = async () => {
   }
 
   return (
-    <div className="h-full w-full py-10 space-y-6">
+    <div className="h-full w-full py-10 space-y-6" data-testid="dashboard-container">
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-8">
           <AppointmentsWidget />

@@ -85,13 +85,13 @@ export function ClientDataTable<TData, TValue>({ columns, data }: DataTableProps
 
   return (
     <div className="rounded-md border">
-      <Table>
+      <Table data-testid="clients-table">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} data-testid={`clients-table-header-${header.id}`}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -103,20 +103,26 @@ export function ClientDataTable<TData, TValue>({ columns, data }: DataTableProps
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && 'selected'}
-                onClick={() => handleRowClick(row)}
-                className="cursor-pointer hover:bg-muted/50"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+            table.getRowModel().rows.map((row) => {
+              const original = row.original as { id?: string; email?: string };
+              const testId =
+                original?.id || original?.email?.replace('@', '-').replace('.', '-') || row.id;
+              return (
+                <TableRow
+                  key={row.id}
+                  data-testid={`client-row-${testId}`}
+                  data-state={row.getIsSelected() && 'selected'}
+                  onClick={() => handleRowClick(row)}
+                  className="cursor-pointer hover:bg-muted/50"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
