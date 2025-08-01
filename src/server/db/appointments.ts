@@ -1,7 +1,8 @@
 import { db } from '@/db';
 import { ClientTable } from '@/db/schema/client/columns';
 import { LearningLicenseTable } from '@/db/schema/learning-licenses/columns';
-import { and, count, eq, sql } from 'drizzle-orm';
+import { RTOServicesTable } from '@/db/schema/rto-services/columns';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { getCurrentOrganizationTenantId } from '@/server/db/branch';
 
 export async function getAppointmentStatistics() {
@@ -47,9 +48,26 @@ export async function getAppointmentStatistics() {
       )
     );
 
+  // RTO Work Count: Count of uncompleted RTO services (not completed, rejected, or cancelled)
+  const rtoWorkCountResult = await db
+    .select({ count: count() })
+    .from(RTOServicesTable)
+    .where(
+      and(
+        eq(RTOServicesTable.tenantId, tenantId),
+        inArray(RTOServicesTable.status, [
+          'PENDING',
+          'DOCUMENT_COLLECTION',
+          'APPLICATION_SUBMITTED',
+          'UNDER_REVIEW',
+          'APPROVED',
+        ])
+      )
+    );
+
   return {
     learningTestCount: learningTestCountResult[0]?.count || 0,
     finalTestCount: finalTestCountResult[0]?.count || 0,
-    rtoWorkCount: 6, // Keep hardcoded as requested
+    rtoWorkCount: rtoWorkCountResult[0]?.count || 0,
   };
 }

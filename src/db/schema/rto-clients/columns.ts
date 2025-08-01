@@ -5,6 +5,7 @@ export const RTOClientTable = pgTable(
   'rto_clients',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    clientCode: text('client_code').notNull(),
     firstName: text('first_name').notNull(),
     middleName: text('middle_name'),
     lastName: text('last_name').notNull(),

@@ -6,6 +6,7 @@ export type RTOServiceInsert = typeof RTOServicesTable.$inferInsert;
 export type RTOServiceWithClient = RTOService & {
   rtoClient: {
     id: string;
+    clientCode: string;
     firstName: string;
     middleName: string | null;
     lastName: string;

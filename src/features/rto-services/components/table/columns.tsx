@@ -18,20 +18,24 @@ import Link from 'next/link';
 
 export const columns: ColumnDef<RTOServiceWithClient>[] = [
   {
-    accessorKey: 'client.clientCode',
+    accessorKey: 'rtoClient.clientCode',
     header: 'Client Code',
     cell: ({ row }) => {
-      const client = row.original.client;
-      return client?.clientCode || '-';
+      const rtoClient = row.original.rtoClient;
+      return rtoClient?.clientCode ? (
+        <Badge variant="outline">RS-{rtoClient.clientCode}</Badge>
+      ) : (
+        '-'
+      );
     },
   },
   {
-    accessorKey: 'client.firstName',
+    accessorKey: 'rtoClient.firstName',
     header: 'Client Name',
     cell: ({ row }) => {
-      const client = row.original.client;
-      if (!client) return '-';
-      return `${client.firstName} ${client.middleName ? client.middleName + ' ' : ''}${client.lastName}`;
+      const rtoClient = row.original.rtoClient;
+      if (!rtoClient) return '-';
+      return `${rtoClient.firstName} ${rtoClient.middleName ? rtoClient.middleName + ' ' : ''}${rtoClient.lastName}`;
     },
   },
   {

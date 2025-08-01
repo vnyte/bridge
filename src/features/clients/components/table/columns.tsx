@@ -56,7 +56,7 @@ export const columns: ColumnDef<Client>[] = [
     accessorKey: 'clientCode',
     header: 'Client Code',
     cell: ({ row }) => {
-      return <Badge variant="outline">{row.original.clientCode}</Badge>;
+      return <Badge variant="outline">CS-{row.original.clientCode}</Badge>;
     },
   },
   {

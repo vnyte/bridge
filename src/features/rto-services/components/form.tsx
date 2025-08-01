@@ -7,6 +7,5 @@ type RTOServiceFormProps = {
 };
 
 export function RTOServiceForm({ rtoService, defaultRtoOffice }: RTOServiceFormProps) {
-  console.log('RTOServiceForm props:', { rtoService: !!rtoService, defaultRtoOffice });
   return <RTOServiceMultistepForm rtoService={rtoService} defaultRtoOffice={defaultRtoOffice} />;
 }

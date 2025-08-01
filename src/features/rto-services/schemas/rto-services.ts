@@ -33,7 +33,7 @@ const baseRtoServiceSchema = createInsertSchema(RTOServicesTable, {
   serviceCharge: z.number().positive('Service charge must be positive'),
   urgentFees: z.number().min(0, 'Urgent fees cannot be negative').default(0),
   totalAmount: z.number().positive('Total amount must be positive'),
-  existingLicenseNumber: z.string().optional(),
+  existingLicenseNumber: z.string().min(1, 'License number is required'),
   applicationNumber: z.string().optional(),
   expectedCompletionDate: z.date().optional(),
   actualCompletionDate: z.date().optional(),
@@ -54,41 +54,17 @@ const baseRtoServiceSchema = createInsertSchema(RTOServicesTable, {
   rtoClientId: true,
 });
 
-export const rtoServiceSchema = baseRtoServiceSchema
-  .refine(
-    (data) => {
-      // Calculate total amount validation
-      const calculatedTotal = data.governmentFees + data.serviceCharge + (data.urgentFees || 0);
-      return data.totalAmount === calculatedTotal;
-    },
-    {
-      message: 'Total amount must equal government fees + service charge + urgent fees',
-      path: ['totalAmount'],
-    }
-  )
-  .refine(
-    (data) => {
-      // For certain service types, existing license number is required
-      const requiresLicense = [
-        'LICENSE_RENEWAL',
-        'ADDRESS_CHANGE',
-        'DUPLICATE_LICENSE',
-        'CATEGORY_ADDITION',
-        'LICENSE_TRANSFER',
-        'NAME_CHANGE',
-        'ENDORSEMENT_REMOVAL',
-      ];
-
-      if (requiresLicense.includes(data.serviceType) && !data.existingLicenseNumber) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'Existing license number is required for this service type',
-      path: ['existingLicenseNumber'],
-    }
-  );
+export const rtoServiceSchema = baseRtoServiceSchema.refine(
+  (data) => {
+    // Calculate total amount validation
+    const calculatedTotal = data.governmentFees + data.serviceCharge + (data.urgentFees || 0);
+    return data.totalAmount === calculatedTotal;
+  },
+  {
+    message: 'Total amount must equal government fees + service charge + urgent fees',
+    path: ['totalAmount'],
+  }
+);
 
 export const rtoServiceFormSchema = baseRtoServiceSchema
   .extend({
@@ -131,29 +107,6 @@ export const rtoServiceFormSchema = baseRtoServiceSchema
     {
       message: 'Total amount must equal government fees + service charge + urgent fees',
       path: ['totalAmount'],
-    }
-  )
-  .refine(
-    (data) => {
-      // For certain service types, existing license number is required
-      const requiresLicense = [
-        'LICENSE_RENEWAL',
-        'ADDRESS_CHANGE',
-        'DUPLICATE_LICENSE',
-        'CATEGORY_ADDITION',
-        'LICENSE_TRANSFER',
-        'NAME_CHANGE',
-        'ENDORSEMENT_REMOVAL',
-      ];
-
-      if (requiresLicense.includes(data.serviceType) && !data.existingLicenseNumber) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'Existing license number is required for this service type',
-      path: ['existingLicenseNumber'],
     }
   )
   .refine(

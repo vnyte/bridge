@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { RTOServicesTable, RTOClientTable } from '@/db/schema';
-import { eq, and, desc, ilike, or } from 'drizzle-orm';
+import { eq, and, desc, ilike, or, isNull } from 'drizzle-orm';
 import type { RTOServiceWithClient, RTOServiceStatus, RTOServiceType } from '../types';
 
 export const addRTOService = async (data: typeof RTOServicesTable.$inferInsert) => {
@@ -59,6 +59,7 @@ export const getRTOService = async (id: string): Promise<RTOServiceWithClient | 
         updatedAt: RTOServicesTable.updatedAt,
         rtoClient: {
           id: RTOClientTable.id,
+          clientCode: RTOClientTable.clientCode,
           firstName: RTOClientTable.firstName,
           middleName: RTOClientTable.middleName,
           lastName: RTOClientTable.lastName,
@@ -68,7 +69,7 @@ export const getRTOService = async (id: string): Promise<RTOServiceWithClient | 
       })
       .from(RTOServicesTable)
       .leftJoin(RTOClientTable, eq(RTOServicesTable.rtoClientId, RTOClientTable.id))
-      .where(eq(RTOServicesTable.id, id));
+      .where(and(eq(RTOServicesTable.id, id), isNull(RTOServicesTable.deletedAt)));
 
     return result || null;
   } catch (error) {
@@ -117,6 +118,7 @@ export const getRTOServices = async (
         updatedAt: RTOServicesTable.updatedAt,
         rtoClient: {
           id: RTOClientTable.id,
+          clientCode: RTOClientTable.clientCode,
           firstName: RTOClientTable.firstName,
           middleName: RTOClientTable.middleName,
           lastName: RTOClientTable.lastName,
@@ -127,7 +129,10 @@ export const getRTOServices = async (
       .from(RTOServicesTable)
       .leftJoin(RTOClientTable, eq(RTOServicesTable.rtoClientId, RTOClientTable.id));
 
-    const conditions = [eq(RTOServicesTable.branchId, branchId)];
+    const conditions = [
+      eq(RTOServicesTable.branchId, branchId),
+      isNull(RTOServicesTable.deletedAt),
+    ];
 
     if (filters?.status) {
       conditions.push(eq(RTOServicesTable.status, filters.status));
@@ -160,8 +165,15 @@ export const getRTOServices = async (
 export const deleteRTOService = async (id: string, branchId: string) => {
   try {
     const [rtoService] = await db
-      .delete(RTOServicesTable)
-      .where(and(eq(RTOServicesTable.id, id), eq(RTOServicesTable.branchId, branchId)))
+      .update(RTOServicesTable)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(RTOServicesTable.id, id),
+          eq(RTOServicesTable.branchId, branchId),
+          isNull(RTOServicesTable.deletedAt)
+        )
+      )
       .returning();
 
     return rtoService;

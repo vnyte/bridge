@@ -5,6 +5,8 @@ export const DEFAULT_OPERATING_HOURS = {
   end: '20:00',
 } as const;
 
+export const DEFAULT_STATE = 'Maharashtra';
+
 export const DAYS_OF_WEEK = [
   { id: 0, label: 'Sunday', short: 'Sun' },
   { id: 1, label: 'Monday', short: 'Mon' },

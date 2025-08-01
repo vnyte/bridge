@@ -31,6 +31,7 @@ import {
   createPayment,
 } from '../../server/action';
 import { PaymentContainer } from './steps/payment';
+import { DEFAULT_STATE } from '@/lib/constants/business';
 
 type MultistepFormProps = {
   branchConfig: {
@@ -52,8 +53,8 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
       personalInfo: {
         citizenStatus: 'BIRTH',
         isCurrentAddressSameAsPermanentAddress: false,
-        state: 'Maharashtra',
-        permanentState: 'Maharashtra',
+        state: DEFAULT_STATE,
+        permanentState: DEFAULT_STATE,
         serviceType: 'FULL_SERVICE' as const,
       },
       learningLicense: {},

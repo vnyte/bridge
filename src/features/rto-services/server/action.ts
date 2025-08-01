@@ -14,6 +14,7 @@ import { db } from '@/db';
 import { RTOClientTable } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getRTOService } from './db';
+import { getNextRTOClientCode } from '@/db/utils/rto-client-code';
 
 /**
  * Server action to add a new RTO service
@@ -47,9 +48,12 @@ export async function addRTOService(
       return { error: true, message: 'Branch or tenant not found' };
     }
 
-    // First, create the RTO client
+    // First, create the RTO client with generated client code
+    const clientCode = await getNextRTOClientCode(tenantId);
+
     const rtoClientData = {
       ...data.clientInfo,
+      clientCode,
       branchId,
       tenantId,
       birthDate: data.clientInfo.birthDate.toISOString().split('T')[0], // Convert to YYYY-MM-DD
