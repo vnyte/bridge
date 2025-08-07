@@ -54,10 +54,8 @@ export const useCurrentStep = <T extends string>(
   );
 
   useEffect(() => {
-    if (interactive) {
-      setInternalStep(externalStep);
-    }
-  }, [externalStep, interactive, setInternalStep]);
+    setInternalStep(externalStep);
+  }, [externalStep, setInternalStep]);
 
   return {
     currentStep: internalStep,
@@ -131,6 +129,7 @@ export const ProgressBar = <T extends string = string>({
 }: ProgressBarProps<T>) => {
   const { currentStep, goToStep } = useStepNavigation(steps, defaultStep, interactive);
 
+  console.log(currentStep);
   const handleStepClick = async (stepKey: T) => {
     if (!interactive) return;
 
