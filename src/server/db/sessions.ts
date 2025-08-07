@@ -7,9 +7,8 @@ import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 const _getSessions = async (branchId: string, vehicleId?: string, clientId?: string) => {
   const conditions = [
     eq(SessionTable.branchId, branchId),
-    // Exclude cancelled and rescheduled sessions from calendar view
+    // Exclude only cancelled sessions from calendar view (include rescheduled sessions)
     ne(SessionTable.status, 'CANCELLED'),
-    ne(SessionTable.status, 'RESCHEDULED'),
   ];
 
   if (vehicleId) {

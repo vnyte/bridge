@@ -480,7 +480,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
         <ProgressBar steps={ADMISSION_STEPS} defaultStep="service" interactive={false} />
 
         {/* Form content - scrollable area */}
-        <ScrollArea className="h-[calc(100vh-320px)] pr-10">
+        <ScrollArea className="h-[calc(100vh-340px)] pr-10">
           <form className="space-y-8 pb-24" data-testid="admission-multistep-form">
             {stepComponents[currentStep as keyof typeof stepComponents]?.component}
           </form>
