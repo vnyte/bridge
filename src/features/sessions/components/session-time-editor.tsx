@@ -20,6 +20,7 @@ import type { Session } from '@/server/db/sessions';
 
 interface SessionTimeEditorProps {
   session: Session | null;
+  sessions?: Session[];
   open: boolean;
   onSave: (sessionId: string, newStartTime: string, newEndTime: string) => Promise<void>;
   onCancel: () => void;
@@ -50,16 +51,58 @@ const calculateEndTime = (startTime: string, durationMinutes: number = 30): stri
   return `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
 };
 
-export const SessionTimeEditor = ({ session, open, onSave, onCancel }: SessionTimeEditorProps) => {
+export const SessionTimeEditor = ({
+  session,
+  sessions = [],
+  open,
+  onSave,
+  onCancel,
+}: SessionTimeEditorProps) => {
   const [startTime, setStartTime] = useState('');
   const [duration, setDuration] = useState(30); // Default 30 minutes
   const [isLoading, setIsLoading] = useState(false);
+  const [conflictError, setConflictError] = useState('');
 
   const timeOptions = generateTimeOptions();
   const endTime = startTime ? calculateEndTime(startTime, duration) : '';
 
+  // Check for time slot conflicts
+  const checkTimeConflict = (newStartTime: string, newEndTime: string) => {
+    if (!session) return null;
+
+    const sessionDate = session.sessionDate;
+
+    // Find other sessions on the same date (excluding the current session being edited)
+    const conflictingSessions = sessions.filter(
+      (s) => s.id !== session.id && s.sessionDate === sessionDate && s.status !== 'CANCELLED'
+    );
+
+    // Check for time overlap
+    for (const otherSession of conflictingSessions) {
+      const otherStart = otherSession.startTime.substring(0, 5); // Convert HH:MM:SS to HH:MM
+      const otherEnd = otherSession.endTime.substring(0, 5); // Convert HH:MM:SS to HH:MM
+
+      // Check if times overlap
+      if (newStartTime < otherEnd && newEndTime > otherStart) {
+        return otherSession;
+      }
+    }
+
+    return null;
+  };
+
   const handleSave = async () => {
     if (!session) return;
+
+    // Check for conflicts before saving
+    const conflictingSession = checkTimeConflict(startTime, endTime);
+    if (conflictingSession) {
+      setConflictError(
+        `This time slot conflicts with ${conflictingSession.clientName}'s session (${conflictingSession.startTime.substring(0, 5)} - ${conflictingSession.endTime.substring(0, 5)})`
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       await onSave(session.id, startTime, endTime);
@@ -67,6 +110,11 @@ export const SessionTimeEditor = ({ session, open, onSave, onCancel }: SessionTi
       setIsLoading(false);
     }
   };
+
+  // Clear error when time or duration changes
+  useEffect(() => {
+    setConflictError('');
+  }, [startTime, duration]);
 
   // Reset form when session changes or modal opens
   useEffect(() => {
@@ -77,6 +125,7 @@ export const SessionTimeEditor = ({ session, open, onSave, onCancel }: SessionTi
         ? session.startTime.substring(0, 5) // Take only HH:MM part
         : session.startTime;
       setStartTime(formattedStartTime);
+      setConflictError('');
     }
   }, [session, open]);
 
@@ -142,6 +191,13 @@ export const SessionTimeEditor = ({ session, open, onSave, onCancel }: SessionTi
                   : '--'}
               </p>
             </div>
+
+            {conflictError && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-sm text-red-600 font-medium">⚠️ Time Slot Conflict</p>
+                <p className="text-sm text-red-600 mt-1">{conflictError}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -152,7 +208,7 @@ export const SessionTimeEditor = ({ session, open, onSave, onCancel }: SessionTi
           <Button
             className="flex-1"
             onClick={handleSave}
-            disabled={isLoading}
+            disabled={isLoading || !!conflictError}
             isLoading={isLoading}
           >
             Save Changes

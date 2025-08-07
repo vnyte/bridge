@@ -70,7 +70,7 @@ export function ClientDataTable<TData, TValue>({ columns, data }: DataTableProps
   const handleRowClick = (row: Row<TData>) => {
     const original = row.original as { id?: string };
     if (original && original.id) {
-      router.push(`/clients/${original.id}`);
+      router.push(`/clients/${original.id}?step=personal`);
     }
   };
 

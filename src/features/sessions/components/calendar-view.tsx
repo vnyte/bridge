@@ -307,11 +307,7 @@ export const CalendarView = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Calendar</h1>
-
-      {/* Controls Row */}
       <div className="mb-6 flex items-end justify-between gap-4">
-        {/* Vehicle Selector */}
         <div className="w-64 pt-4">
           <label className="block text-sm font-medium mb-2">Vehicle</label>
           <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
@@ -637,7 +633,7 @@ export const CalendarView = () => {
           )}
 
           {selectedSession && selectedSession.status === 'SCHEDULED' && (
-            <DialogFooter className="flex jusitfy-between w-full gap-2">
+            <DialogFooter className="flex jusitfy-between items-center w-full gap-2">
               <Button variant="outline" className="flex-1" onClick={handleEditTime}>
                 Edit Time
               </Button>
@@ -662,6 +658,7 @@ export const CalendarView = () => {
       {/* Session Time Editor Modal */}
       <SessionTimeEditor
         session={selectedSession}
+        sessions={sessions}
         open={isEditingTime}
         onSave={handleSaveTimeEdit}
         onCancel={handleCancelTimeEdit}

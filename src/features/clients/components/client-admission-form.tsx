@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   useStepNavigation,
   ProgressBar,
+  ADMISSION_STEPS,
 } from '@/features/admission/components/progress-bar/progress-bar';
 import { ActionReturnType } from '@/types/actions';
 import {
@@ -71,6 +72,7 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         firstName: client.firstName,
         middleName: client.middleName || '',
         lastName: client.lastName,
+        clientCode: client.clientCode,
         aadhaarNumber: client.aadhaarNumber || '',
         panNumber: client.panNumber || '',
         photoUrl: client.photoUrl || '',
@@ -105,19 +107,41 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
         ? {
             class: client.learningLicense.class || [],
             licenseNumber: client.learningLicense.licenseNumber || '',
-            issueDate: client.learningLicense.issueDate || undefined,
-            expiryDate: client.learningLicense.expiryDate || undefined,
+            issueDate: client.learningLicense.issueDate
+              ? typeof client.learningLicense.issueDate === 'string'
+                ? new Date(client.learningLicense.issueDate)
+                : client.learningLicense.issueDate
+              : null,
+            expiryDate: client.learningLicense.expiryDate
+              ? typeof client.learningLicense.expiryDate === 'string'
+                ? new Date(client.learningLicense.expiryDate)
+                : client.learningLicense.expiryDate
+              : null,
           }
-        : {},
+        : undefined,
       drivingLicense: client.drivingLicense
         ? {
+            class: client.drivingLicense.class || [],
             licenseNumber: client.drivingLicense.licenseNumber || '',
-            issueDate: client.drivingLicense.issueDate || undefined,
-            expiryDate: client.drivingLicense.expiryDate || undefined,
-            appointmentDate: client.drivingLicense.appointmentDate || undefined,
+            issueDate: client.drivingLicense.issueDate
+              ? typeof client.drivingLicense.issueDate === 'string'
+                ? new Date(client.drivingLicense.issueDate)
+                : client.drivingLicense.issueDate
+              : null,
+            expiryDate: client.drivingLicense.expiryDate
+              ? typeof client.drivingLicense.expiryDate === 'string'
+                ? new Date(client.drivingLicense.expiryDate)
+                : client.drivingLicense.expiryDate
+              : null,
+            appointmentDate: client.drivingLicense.appointmentDate
+              ? typeof client.drivingLicense.appointmentDate === 'string'
+                ? new Date(client.drivingLicense.appointmentDate)
+                : client.drivingLicense.appointmentDate
+              : null,
           }
-        : {},
+        : undefined,
       plan: {
+        clientId: client.id,
         vehicleId: client.plan?.[0]?.vehicleId || '',
         numberOfSessions: client.plan?.[0]?.numberOfSessions || 21,
         sessionDurationInMinutes: client.plan?.[0]?.sessionDurationInMinutes || 30,
@@ -144,11 +168,24 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
           }
           return new Date();
         })(),
+        joiningTime: client.plan?.[0]?.joiningTime || '09:00',
       },
       payment: {
+        clientId: client.id,
+        planId: client.plan?.[0]?.id || '',
+        originalAmount: client.payments?.[0]?.originalAmount || 0,
         discount: client.payments?.[0]?.discount || 0,
+        finalAmount: client.payments?.[0]?.finalAmount || 0,
+        paymentStatus: client.payments?.[0]?.paymentStatus || 'PENDING',
         paymentType: client.payments?.[0]?.paymentType || 'FULL_PAYMENT',
+        fullPaymentDate: client.payments?.[0]?.fullPaymentDate || null,
+        fullPaymentMode: client.payments?.[0]?.fullPaymentMode || 'PAYMENT_LINK',
+        firstInstallmentAmount: client.payments?.[0]?.firstInstallmentAmount || null,
+        firstInstallmentDate: client.payments?.[0]?.firstInstallmentDate || null,
+        firstPaymentMode: client.payments?.[0]?.firstPaymentMode || 'PAYMENT_LINK',
+        secondInstallmentAmount: client.payments?.[0]?.secondInstallmentAmount || null,
         secondInstallmentDate: client.payments?.[0]?.secondInstallmentDate || null,
+        secondPaymentMode: client.payments?.[0]?.secondPaymentMode || 'PAYMENT_LINK',
         paymentDueDate: client.payments?.[0]?.paymentDueDate || null,
       },
     };
@@ -162,23 +199,11 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
 
   const { trigger, getValues, reset, watch } = methods;
   const { currentStep, goToNext, goToPrevious, isFirstStep, isLastStep, goToStep } =
-    useStepNavigation(true);
-
-  // Start at personal step for existing clients (skip service type selection on initial load)
-  const [hasInitialized, setHasInitialized] = useState(false);
+    useStepNavigation(ADMISSION_STEPS, 'service', true);
 
   // Unsaved changes confirmation dialog
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [pendingStepNavigation, setPendingStepNavigation] = useState<StepKey | null>(null);
-
-  useEffect(() => {
-    if (!hasInitialized && currentStep === 'service') {
-      goToStep('personal');
-      setHasInitialized(true);
-    } else if (!hasInitialized) {
-      setHasInitialized(true);
-    }
-  }, [currentStep, goToStep, hasInitialized]);
 
   // Watch all form values to detect changes
   const watchedValues = watch();
@@ -625,7 +650,12 @@ export const ClientAdmissionForm = ({ client, branchConfig }: ClientAdmissionFor
     <FormProvider {...methods}>
       <div className="h-full flex flex-col py-2 gap-4">
         {/* Progress Bar */}
-        <ProgressBar interactive={true} onStepClick={handleStepNavigation} />
+        <ProgressBar
+          steps={ADMISSION_STEPS}
+          defaultStep="service"
+          interactive={true}
+          onStepClick={handleStepNavigation}
+        />
 
         <ScrollArea className="h-[calc(100vh-20rem)] pr-10">
           <form className="space-y-8 pb-24">

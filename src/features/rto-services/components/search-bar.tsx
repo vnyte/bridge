@@ -8,7 +8,7 @@ export function RTOServiceSearchBar() {
   const [client, setClient] = useQueryState('client', { defaultValue: '' });
 
   return (
-    <div className="relative w-full max-w-sm">
+    <div className="relative w-full">
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         placeholder="Search by client name, code, or phone..."

@@ -6,7 +6,12 @@ import { Clients } from '@/features/clients/components/table/clients';
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ name?: string; paymentStatus?: string; columns?: string }>;
+  searchParams: Promise<{
+    name?: string;
+    paymentStatus?: string;
+    columns?: string;
+    learningTest?: string;
+  }>;
 }) {
   const params = await searchParams;
   return (
@@ -15,7 +20,11 @@ export default async function ClientsPage({
       <Suspense fallback={<div>Loading filters...</div>}>
         <ClientFilters />
       </Suspense>
-      <Clients name={params.name} paymentStatus={params.paymentStatus} />
+      <Clients
+        name={params.name}
+        paymentStatus={params.paymentStatus}
+        learningTest={params.learningTest}
+      />
     </div>
   );
 }

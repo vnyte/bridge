@@ -167,7 +167,12 @@ export const ProgressBar = <T extends string = string>({
                 isActive ? 'fill-primary' : isPast ? 'fill-primary/20' : 'fill-gray-200'
               )}
             />
-            <span className={cn('relative z-10', isActive ? 'text-white' : 'text-gray-900')}>
+            <span
+              className={cn(
+                'relative z-10 font-medium',
+                isActive ? 'text-white' : 'text-primary-400'
+              )}
+            >
               {step.label}
             </span>
           </button>

@@ -13,7 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { useQueryState } from 'nuqs';
 import { useColumnPreferences } from '@/hooks/use-column-preferences';
-import { Settings } from 'lucide-react';
+import { Settings, FileText } from 'lucide-react';
+import Link from 'next/link';
 
 const paymentStatusOptions = [
   { value: 'ALL', label: 'All Status' },
@@ -47,6 +48,8 @@ export const ClientFilters = () => {
     shallow: false,
     defaultValue: 'ALL',
   });
+
+  const [learningTest] = useQueryState('learningTest');
 
   const { visibleColumns, setVisibleColumns } = useColumnPreferences();
   const visibleColumnsArray = visibleColumns?.split(',') || [];
@@ -87,35 +90,45 @@ export const ClientFilters = () => {
           </SelectContent>
         </Select>
       </div>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-56">
-          <div className="space-y-4">
-            <h4 className="text-sm font-medium">Toggle Columns</h4>
-            <div className="space-y-2">
-              {columnOptions.map((column) => (
-                <div key={column.key} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={column.key}
-                    checked={visibleColumnsArray.includes(column.key)}
-                    onCheckedChange={() => toggleColumn(column.key)}
-                  />
-                  <label
-                    htmlFor={column.key}
-                    className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {column.label}
-                  </label>
-                </div>
-              ))}
+      <div className="flex gap-2">
+        {learningTest === 'true' && (
+          <Link href="/forms">
+            <Button variant="outline">
+              <FileText className="h-4 w-4 mr-2" />
+              Bulk Print Forms
+            </Button>
+          </Link>
+        )}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56">
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium">Toggle Columns</h4>
+              <div className="space-y-2">
+                {columnOptions.map((column) => (
+                  <div key={column.key} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={column.key}
+                      checked={visibleColumnsArray.includes(column.key)}
+                      onCheckedChange={() => toggleColumn(column.key)}
+                    />
+                    <label
+                      htmlFor={column.key}
+                      className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {column.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 };

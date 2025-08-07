@@ -15,7 +15,7 @@ export const PaymentOptions = ({
 }: PaymentCheckboxProps) => {
   const { control, setValue } = useFormContext<AdmissionFormValues>();
 
-  const hasExistingDiscount = existingPayment && existingPayment.discount > 0;
+  const hasExistingDiscount = Boolean(existingPayment && existingPayment.discount > 0);
 
   // Update form value when payment checkboxes change
   useEffect(() => {
@@ -100,7 +100,7 @@ export const PaymentOptions = ({
             <Checkbox
               checked={paymentCheckboxes.discount.isChecked}
               onCheckedChange={(checked) => handleCheckboxChange('discount', checked)}
-              disabled={Boolean(hasExistingDiscount)}
+              disabled={hasExistingDiscount}
             />
           </FormControl>
           <FormLabel

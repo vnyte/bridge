@@ -1,13 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { getAppointmentStatsAction } from '../actions/appointment-stats';
+import Link from 'next/link';
 
 type AppointmentType = {
   id: string;
   title: string;
   count: number;
   type: 'learning' | 'final' | 'rto';
+  link: string;
 };
 
 export async function AppointmentsWidget() {
@@ -19,18 +20,21 @@ export async function AppointmentsWidget() {
       title: 'Learning Test',
       count: stats.learningTestCount,
       type: 'learning',
+      link: '/clients?learningTest=true',
     },
     {
       id: '2',
       title: 'Final Test',
       count: stats.finalTestCount,
       type: 'final',
+      link: '/appointments',
     },
     {
       id: '3',
       title: 'R.T.O. Work',
       count: stats.rtoWorkCount,
       type: 'rto',
+      link: '/rto-services?status=PENDING',
     },
   ];
   return (
@@ -51,12 +55,12 @@ export async function AppointmentsWidget() {
             <div key={appointment.id} className="space-y-4 border-r-1 last:border-r-0">
               <h3 className="text-sm font-medium text-muted-foreground">{appointment.title}</h3>
               <div className="text-4xl font-bold text-foreground">{appointment.count}</div>
-              <Button
-                variant="link"
+              <Link
                 className="text-blue-600 hover:text-blue-700 p-0 h-auto font-normal text-sm"
+                href={appointment.link}
               >
                 View
-              </Button>
+              </Link>
             </div>
           ))}
         </div>

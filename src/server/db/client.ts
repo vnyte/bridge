@@ -11,12 +11,24 @@ import { auth } from '@clerk/nextjs/server';
 import { eq, ilike, and, desc, or, count, gte, sql } from 'drizzle-orm';
 import { getCurrentOrganizationBranchId } from '@/server/db/branch';
 
-const _getClients = async (branchId: string, name?: string, paymentStatus?: string) => {
+const _getClients = async (
+  branchId: string,
+  name?: string,
+  paymentStatus?: string,
+  needsLearningTest?: boolean
+) => {
   const conditions = [eq(ClientTable.branchId, branchId)];
 
   if (name) {
     conditions.push(
       or(ilike(ClientTable.firstName, `%${name}%`), ilike(ClientTable.lastName, `%${name}%`))!
+    );
+  }
+
+  if (needsLearningTest) {
+    conditions.push(
+      eq(ClientTable.serviceType, 'FULL_SERVICE'),
+      sql`(${LearningLicenseTable.licenseNumber} IS NULL OR ${LearningLicenseTable.licenseNumber} = '')`
     );
   }
 
@@ -33,9 +45,11 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
       city: ClientTable.city,
       state: ClientTable.state,
       clientCode: ClientTable.clientCode,
+      serviceType: ClientTable.serviceType,
       createdAt: ClientTable.createdAt,
       paymentStatus: PaymentTable.paymentStatus,
       hasLearningLicense: LearningLicenseTable.id,
+      learningLicenseNumber: LearningLicenseTable.licenseNumber,
       hasDrivingLicense: DrivingLicenseTable.id,
       hasPlan: PlanTable.id,
       hasPayment: PaymentTable.id,
@@ -116,7 +130,11 @@ const _getClients = async (branchId: string, name?: string, paymentStatus?: stri
   return clientsWithSessions;
 };
 
-export const getClients = async (name?: string, paymentStatus?: string) => {
+export const getClients = async (
+  name?: string,
+  paymentStatus?: string,
+  needsLearningTest?: boolean
+) => {
   const { userId } = await auth();
   const branchId = await getCurrentOrganizationBranchId();
 
@@ -124,7 +142,7 @@ export const getClients = async (name?: string, paymentStatus?: string) => {
     return [];
   }
 
-  return await _getClients(branchId, name, paymentStatus);
+  return await _getClients(branchId, name, paymentStatus, needsLearningTest);
 };
 
 const _getClient = async (id: string) => {

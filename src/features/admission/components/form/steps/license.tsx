@@ -16,13 +16,16 @@ type LicenseStepProps = {
 export const LicenseStep = ({ branchServiceCharge = 0 }: LicenseStepProps) => {
   const { control, watch } = useFormContext<AdmissionFormValues>();
 
+  // Watch service type to conditionally show/hide fields
+  const serviceType = watch('personalInfo.serviceType');
+
   // Watch selected license classes and existing license info for fee calculation
   const selectedLicenseClasses = watch('learningLicense.class') || [];
   const existingLearningLicenseNumber = watch('learningLicense.licenseNumber') || '';
-  
+
   // Check if student already has a learners license
   const hasExistingLearners = existingLearningLicenseNumber.trim().length > 0;
-  
+
   // Calculate fees based on scenario
   const feeCalculation = calculateLicenseFees(
     selectedLicenseClasses,
@@ -48,7 +51,7 @@ export const LicenseStep = ({ branchServiceCharge = 0 }: LicenseStepProps) => {
 
   return (
     <div className="space-y-10">
-      {/* License Classes */}
+      {/* License Classes - Always show, but change behavior based on service type */}
       <div className="grid grid-cols-12 gap-6">
         <TypographyH5 className="col-span-3">License Classes</TypographyH5>
         <div className="col-span-4">
@@ -57,7 +60,9 @@ export const LicenseStep = ({ branchServiceCharge = 0 }: LicenseStepProps) => {
             name="learningLicense.class"
             render={({ field }) => (
               <FormItem>
-                <FormLabel required>Applying for</FormLabel>
+                <FormLabel required>
+                  {serviceType === 'DRIVING_ONLY' ? 'License Class' : 'Applying for'}
+                </FormLabel>
                 <MultiSelect
                   options={licenseClassOptions}
                   onValueChange={field.onChange}
@@ -71,23 +76,19 @@ export const LicenseStep = ({ branchServiceCharge = 0 }: LicenseStepProps) => {
           />
         </div>
         <div className="col-span-5 h-full">
-          {selectedLicenseClasses.length > 0 && (
+          {selectedLicenseClasses.length > 0 && serviceType !== 'DRIVING_ONLY' && (
             <div className="text-right h-full flex flex-col justify-end">
               <div className="text-sm text-gray-600">
                 Estimated License Fees:{' '}
-                <span className="text-lg font-semibold text-blue-700">
-                  ₹{feeCalculation.total}
-                </span>
+                <span className="text-lg font-semibold text-blue-700">₹{feeCalculation.total}</span>
               </div>
 
               <div className="text-xs text-gray-500">
                 Govt: ₹{feeCalculation.governmentFees} + Service: ₹{branchServiceCharge}
               </div>
-              
+
               {selectedLicenseClasses.length > 1 || hasExistingLearners ? (
-                <div className="text-xs text-blue-600 mt-1">
-                  {feeCalculation.breakdown}
-                </div>
+                <div className="text-xs text-blue-600 mt-1">{feeCalculation.breakdown}</div>
               ) : null}
             </div>
           )}
