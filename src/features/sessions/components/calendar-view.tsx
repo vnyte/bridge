@@ -533,7 +533,9 @@ export const CalendarView = () => {
                                   .toUpperCase()}
                               </div>
                               <span className="text-xs font-medium text-gray-900 truncate">
-                                {session.clientName}
+                                {session.clientName.length > 12
+                                  ? `${session.clientName.substring(0, 12)} ...`
+                                  : session.clientName}
                               </span>
                             </div>
                             {/* Status indicator - only for completed and in-progress sessions */}

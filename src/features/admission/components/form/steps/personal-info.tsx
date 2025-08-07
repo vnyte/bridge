@@ -24,6 +24,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { BloodGroupEnum, GenderEnum, CitizenStatusEnum } from '@/db/schema/client/columns';
 import { TypographyH5, TypographyP } from '@/components/ui/typography';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { PhotoUpload } from '@/components/ui/photo-upload';
 import { useEffect } from 'react';
 import { Info } from 'lucide-react';
 
@@ -92,44 +93,59 @@ export const PersonalInfoStep = () => {
         </TypographyH5>
 
         <div className="grid grid-cols-3 col-span-9 gap-6 items-end">
-          <FormField
-            control={control}
-            name="personalInfo.aadhaarNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel required>Aadhaar Number</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="123456789012"
+          <div className="grid grid-cols-3 gap-6 col-span-3 items-top">
+            <FormField
+              control={control}
+              name="personalInfo.aadhaarNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Aadhaar Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="123456789012"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      maxLength={12}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="personalInfo.panNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>PAN Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="ABCDE1234F"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      maxLength={10}
+                      style={{ textTransform: 'uppercase' }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="personalInfo.photoUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <PhotoUpload
                     value={field.value || ''}
                     onChange={field.onChange}
-                    maxLength={12}
+                    label="Passport Size Photo"
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="personalInfo.panNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>PAN Number</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="ABCDE1234F"
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                    maxLength={10}
-                    style={{ textTransform: 'uppercase' }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div /> {/* Empty div to maintain grid layout */}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={control}
             name="personalInfo.firstName"
@@ -182,7 +198,7 @@ export const PersonalInfoStep = () => {
             name="personalInfo.guardianFirstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Guardian Name</FormLabel>
+                <FormLabel required>Guardian Name</FormLabel>
                 <FormControl>
                   <Input placeholder="First" value={field.value || ''} onChange={field.onChange} />
                 </FormControl>
@@ -306,7 +322,7 @@ export const PersonalInfoStep = () => {
               </FormItem>
             )}
           />
-          <div /> {/* Empty div to maintain grid layout */}
+          <div />
         </div>
       </div>
 

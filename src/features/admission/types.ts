@@ -63,6 +63,11 @@ export const personalInfoSchema = createInsertSchema(ClientTable, {
   serviceType: z.enum(ServiceTypeEnum.enumValues, {
     required_error: 'Service type is required',
   }),
+
+  guardianFirstName: z.string().min(1, 'Guardian first name is required'),
+  guardianLastName: z.string().min(1, 'Guardian last name is required'),
+
+  photoUrl: z.string().optional(),
 });
 
 export const learningLicenseSchema = createInsertSchema(LearningLicenseTable, {
