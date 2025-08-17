@@ -17,6 +17,7 @@ export const PaymentTable = pgTable('payments', {
   id: uuid('id').primaryKey().defaultRandom(),
   clientId: uuid('client_id').notNull(),
   planId: uuid('plan_id').notNull().unique(),
+  rtoServiceId: uuid('rto_service_id'),
 
   originalAmount: integer('original_amount').notNull(),
   discount: integer('discount').notNull().default(0),

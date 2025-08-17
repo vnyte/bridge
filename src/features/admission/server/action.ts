@@ -39,6 +39,7 @@ import {
   getSessionsByClientId,
   updateScheduledSessionsForClient,
 } from '@/server/actions/sessions';
+import { sendOnboardingWithReceiptWhatsApp } from '@/lib/whatsapp';
 
 export const createClient = async (
   unsafeData: z.infer<typeof personalInfoSchema>
@@ -629,6 +630,67 @@ export const createPayment = async (
 
     const action = isExistingPayment ? 'updated' : 'created';
     const cashMessage = isCashPayment ? ' and marked as paid (cash received)' : '';
+
+    // Send WhatsApp payment notification for successful payments
+    if (
+      paymentId &&
+      (isCashPayment ||
+        data?.paymentStatus === 'FULLY_PAID' ||
+        data?.paymentStatus === 'PARTIALLY_PAID')
+    ) {
+      try {
+        // Get client details
+        const client = await db.query.ClientTable.findFirst({
+          where: eq(ClientTable.id, plan.clientId),
+        });
+
+        if (client) {
+          // Send comprehensive onboarding + receipt message for all payments
+          const plan = await db.query.PlanTable.findFirst({
+            where: eq(PlanTable.id, unsafeData.planId),
+          });
+
+          if (plan) {
+            const vehicle = await db.query.VehicleTable.findFirst({
+              where: eq(VehicleTable.id, plan.vehicleId),
+            });
+
+            const sessions = await getSessionsByClientId(plan.clientId);
+
+            // Always send comprehensive onboarding + receipt message
+            await sendOnboardingWithReceiptWhatsApp({
+              id: client.id,
+              firstName: client.firstName,
+              lastName: client.lastName,
+              phoneNumber: client.phoneNumber,
+              plan: {
+                numberOfSessions: plan.numberOfSessions,
+                joiningDate: plan.joiningDate,
+                joiningTime: plan.joiningTime,
+              },
+              sessions: sessions.map((session) => ({
+                sessionDate: session.sessionDate,
+                startTime: session.startTime,
+              })),
+              payment: {
+                amount: finalAmount,
+                paymentMode: data?.fullPaymentMode || data?.firstPaymentMode || 'PAYMENT_LINK',
+                transactionReference: `TXN-${Date.now()}`,
+              },
+              vehicleDetails: {
+                name: vehicle?.name || 'Vehicle',
+                number: vehicle?.number || 'N/A',
+                type: 'Driving School Vehicle',
+              },
+            });
+          }
+        }
+      } catch (whatsappError) {
+        console.error('Failed to send WhatsApp payment receipt:', whatsappError);
+        // Don't fail the payment if WhatsApp fails
+      }
+    }
+
     return {
       error: false,
       message: `Payment ${action} successfully${cashMessage}`,

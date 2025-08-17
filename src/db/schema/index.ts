@@ -47,3 +47,5 @@ export * from './rto-services/relations';
 
 export * from './rto-clients/columns';
 export * from './rto-clients/relations';
+export * from './message-logs/columns';
+export * from './message-logs/relations';
