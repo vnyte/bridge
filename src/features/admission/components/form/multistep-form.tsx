@@ -309,7 +309,7 @@ export const MultistepForm = ({ branchConfig }: MultistepFormProps) => {
   };
 
   // Get initial default values for comparison
-  const getInitialValues = (): AdmissionFormValues => {
+  const getInitialValues = () => {
     return {
       personalInfo: {
         citizenStatus: 'BIRTH',

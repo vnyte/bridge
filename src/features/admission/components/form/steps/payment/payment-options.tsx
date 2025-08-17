@@ -15,7 +15,7 @@ export const PaymentOptions = ({
 }: PaymentCheckboxProps) => {
   const { control, setValue } = useFormContext<AdmissionFormValues>();
 
-  const hasExistingDiscount = existingPayment && existingPayment.discount > 0;
+  const hasExistingDiscount = Boolean(existingPayment && existingPayment.discount > 0);
 
   // Update form value when payment checkboxes change
   useEffect(() => {
@@ -154,7 +154,7 @@ export const PaymentOptions = ({
                         field.onChange(isNaN(numValue) ? 0 : numValue);
                         handleDiscountChange(e.target.value);
                       }}
-                      className="h-12 pr-10" // Added right padding for the X icon
+                      className="h-12 pr-10"
                       disabled={hasExistingDiscount}
                     />
                   </FormControl>
@@ -194,7 +194,7 @@ export const PaymentOptions = ({
                       field.onChange(date ? new Date(date).toISOString() : null);
                       handleDateChange('later', date);
                     }}
-                    className="h-12" // Increased height
+                    className="h-12"
                     minDate={new Date()}
                     maxDate={new Date(2100, 0, 1)}
                   />
@@ -221,9 +221,9 @@ export const PaymentOptions = ({
                       field.onChange(date ? new Date(date).toISOString() : null);
                       handleDateChange('installments', date);
                     }}
-                    className="h-12" // Increased height
+                    className="h-12"
                     minDate={new Date()}
-                    maxDate={new Date(2100, 0, 1)} // Allow future dates for expiry
+                    maxDate={new Date(2100, 0, 1)}
                   />
                 </FormControl>
                 <FormMessage />

@@ -1,8 +1,8 @@
 export * from './vehicles/columns';
 export * from './vehicles/relations';
 
-export * from './tenants/columns';
-export * from './tenants/relations';
+export * from './tenant/columns';
+export * from './tenant/relations';
 
 export * from './branches/columns';
 export * from './branches/relations';
@@ -41,3 +41,6 @@ export * from './form-prints/relations';
 
 export * from './staff/columns';
 export * from './staff/relations';
+
+export * from './message-logs/columns';
+export * from './message-logs/relations';
